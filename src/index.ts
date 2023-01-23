@@ -1,31 +1,57 @@
 //https://github.com/actions/toolkit/tree/main/packages/
 import {PathOrFileDescriptor} from "fs";
-import {XmlDocument, XmlElement} from "xmldoc";
 
-const core = require('@actions/core');
+const os = require('os');
 const fs = require('fs');
-const path = require('path');
-const xmlReader = require('xmldoc');
-const git = require('simple-git');
+const core = require('@actions/core');
+
+type ResultType = string | number | boolean | null;
+//FILE ENDINGS
+const fileEndingsMap = new Map<string, string[]>(
+    [["js", [".js", ".mjs", ".cjs"]],
+        ["ts", [".ts", ".tsx"]],
+        ["python", [".py", ".pyc", ".pyd", ".pyo"]],
+        ["java", [".java", ".class", ".jar", ".jav", ".jsp", ".jspf", ".jsf", ".groovy"]],
+        ["kotlin", [".kt", ".kts"]],
+        ["cs", [".cs", ".dll"]],
+        ["cpp", [".c", ".cpp", ".h", ".hpp", ".o", ".a"]],
+        ["ruby", [".rb", ".rbw", ".rake", ".gemspec"]],
+        ["php", [".php", ".phtml", ".php3", ".php4", ".php5", ".phps"]],
+        ["swift", [".swift", ".swiftdoc", ".swiftmodule"]],
+        ["go", [".go", ".a", ".o"]],
+        ["shell", [".sh", ".bash", ".csh", ".tcsh", ".ksh", ".zsh", ".fish", ".bat", ".cmd"]],
+        ["perl", [".pl", ".pm", ".pod", ".t"]],
+        ["lua", [".lua"]],
+        ["r", [".r", ".R"]],
+        ["sql", [".sql", ".ddl", ".dml"]],
+        ["html", [".html", ".htm", ".xhtml"]],
+        ["css", [".css", "scss"]],
+        ["xml", [".xml"]],
+        ["json", [".json"]],
+        ["yaml", [".yml", ".yaml"]],
+        ["config", [".config", ".ini", ".cfg", ".conf", ".properties", ".yml", ".yaml"]],
+        ["json", [".json"]],
+        ["envs", [".env"]],
+        ["toml", [".toml"]],
+        ["md", [".md", ".markdown", ".mdown", ".mkdn", ".mkd", ".mdwn", ".mdtxt", ".mdtext", ".mdml"]],
+        ["text", [".txt", ".text",]],
+        ["pictures", [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".heic", ".svg", ".webp", ".avif", ".raw"]],
+    ]);
 
 try {
-    //TODO: auto update java & gradle versions
     let workDir = core.getInput('work-dir');
-    let jvFallback = core.getInput('jv-fallback') || 17;
-    let pvFallback = core.getInput('pv-fallback') || null;
-    let deep = parseInt(core.getInput('deep')) || 1;
+    let ignoreFilesStr = core.getInput('ignore-files') || null;
+    let branchFallback = core.getInput('branch-fallback') || null;
+    let tagFallback = core.getInput('tag-fallback') || null;
     let workspace = process.env['GITHUB_WORKSPACE']?.toString() || null;
     if (!workDir || workDir === ".") {
         workDir = getWorkingDirectory(workspace)
     }
-    let result = run(workDir, deep, jvFallback, pvFallback);
-    result.set('deep', deep);
-    result.set('work-dir', workDir);
-    result.set('jv-fallback', jvFallback);
-    result.set('pv-fallback', pvFallback);
+    let ignoreFiles = isEmpty(ignoreFilesStr) ? new Set<string>() : ignoreFilesStr.split(',');
+    let result = run(workDir, ignoreFiles, branchFallback, tagFallback);
     result.set('GITHUB_WORKSPACE', workspace || null);
 
-    console.log(JSON.stringify(Object.fromEntries(result), null, 4))
+    console.log(JSON.stringify(Object.fromEntries(sortMap(result)), null, 4))
 
     result.forEach((value, key) => {
         core.setOutput(key, value);
@@ -38,325 +64,135 @@ try {
     }
 }
 
-function run2(workDir: PathOrFileDescriptor): Map<string, string | number | boolean | null> {
+function run(workDir: PathOrFileDescriptor, ignoreFiles: Set<string>, branchFallback: string, tagFallback: string): Map<string, ResultType> {
     //DEFAULTS
-    let result = new Map<string, string | number | boolean | null>([
-        ['sha_latest_commit', null],
-        ['sha_latest_tag', null],
-        ['tag_latest', null],
-        ['branch', null],
-        ['branch_default', null],
-        ['is_default_branch', null],
-        ['has_changes_local', null],
-        ['has_changes', null],
+    let result = new Map<string, ResultType>();
+    branchFallback = isEmpty(branchFallback) ? 'main' : branchFallback
+    ignoreFiles = new Set(Array.from(ignoreFiles, s => s.trim()));
+    result.set('work-dir', workDir.toString());
+    result.set('ignore-files', Array.from(ignoreFiles).join(", ") || null);
+    result.set('branch-fallback', branchFallback);
+    result.set('tag-fallback', tagFallback);
 
-    ]);
-    //PROCESSING
-    result.set('sha_latest_commit', git.raw('git', 'rev-parse', 'HEAD'));
+    let gitStatus = cmd(workDir, 'git status --porcelain');
+    cmd(workDir, 'git fetch --all --tags');
+    result.set('is_git_repo', !isEmpty(cmd(workDir, 'git rev-parse --is-inside-work-tree', 'git rev-parse --git-dir')));
+    result.set('branch', deleteBranchPrefix(cmd(workDir, 'git branch --show-current', 'git branch --show', 'git rev-parse --abbrev-ref HEAD', 'git rev-parse --abbrev-ref --symbolic-full-name @{u}')));
+    result.set('branch_default', getDefaultBranch(workDir, branchFallback));
+    result.set('is_default_branch', result.get('branch') === result.get('branch_default') && result.get('branch') !== null);
+    result.set('sha_latest', cmd(workDir, 'git rev-parse HEAD'));
+    result = setLatestTag(workDir, result, tagFallback);
+    result.set('has_changes', result.get('sha_latest') !== result.get('sha_latest_tag'));
 
+    let changedFiles = toFilesSet(ignoreFiles, cmd(workDir, 'git diff ' + result.get('sha_latest') + ' ' + result.get('sha_latest_tag') + ' --name-only'))
+    let changedLocalFiles = toFilesSet(ignoreFiles, gitStatus);
+    result.set('has_local_changes', changedLocalFiles && changedLocalFiles.size > 0);
+    fileEndingsMap.forEach((fileEndings, language) => {
+        result.set('x_has_local_changes_' + language.toLowerCase(), hasFileEnding(changedLocalFiles, fileEndings));
+    });
+    fileEndingsMap.forEach((fileEndings, language) => {
+        result.set('x_has_changes_' + language.toLowerCase(), hasFileEnding(changedFiles, fileEndings));
+    });
+    let languages = Array.from(fileEndingsMap.keys());
+    languages.sort();
+    result.set('x_language_list', languages.join(', '));
+
+    let aheadBehind = cmd(workDir, 'git rev-list --count --left-right ' + result.get('branch') + '...' + result.get('branch_default'))
+    let ahead = isEmpty(aheadBehind) ? null : aheadBehind?.split(/\s/)[0].trim()
+    let behind = isEmpty(aheadBehind) ? null : aheadBehind?.split(/\s/)[1].trim()
+    result.set('commits_ahead', parseInt(ahead || '0'));
+    result.set('commits_behind', parseInt(behind || '0'));
     return result;
 }
 
-function run(workDir: PathOrFileDescriptor, deep: number, jvFallback: number, pvFallback: number): Map<string, string | number | boolean | null> {
-    //DEFAULTS
-    let result = new Map<string, string | number | boolean | null>([
-        ['cmd', null],
-        ['cmd_test', null],
-        ['cmd_build', null],
-        ['is_maven', false],
-        ['is_gradle', false],
-        ['has_wrapper', false],
-        ['java_version', null],
-        ['cmd_test_build', null],
-        ['builder_version', null],
-        ['project_version', null],
-        ['cmd_update_deps', null],
-        ['cmd_update_plugs', null],
-        ['cmd_update_props', null],
-        ['cmd_update_parent', null],
-        ['cmd_update_wrapper', null]
-    ]);
-    //PROCESSING
-    let mavenFiles = listMavenFiles(workDir, deep);
-    let gradleFiles = listGradleFiles(workDir, deep);
-    if (gradleFiles.length > 0) {
-        result = readGradle(gradleFiles, result);
-    } else if (mavenFiles.length > 0) {
-        result = readMaven(mavenFiles, result);
+function toFilesSet(ignoreFiles: Set<string>, changesLog: string | null): Set<string> {
+    let result = new Set<string>();
+    if (isEmpty(changesLog) || changesLog === null) {
+        return result;
     }
-
-    //POST PROCESSING
-    result.set('project_version', result.get('project_version') || pvFallback || null);
-    result.set('java_version', (result.get('java_version') as number) || jvFallback || null);
-
-    result.set('java_version_legacy', toLegacyJavaVersion(result.get('java_version')));
-    result.set('is_gradle', gradleFiles.length > 0);
-    result.set('is_maven', mavenFiles.length > 0);
-    return result;
-}
-
-function readMaven(mavenFiles: PathOrFileDescriptor[], result: Map<string, string | number | boolean | null>): Map<string, string | number | boolean | null> {
-    result.set('is_maven', mavenFiles.length > 0);
-    mavenFiles.forEach(file => {
-            try {
-                let dir = path.dirname(file.toString());
-                let wrapperMapFile = path.join(dir, '.mvn', 'wrapper', 'maven-wrapper.properties');
-
-                let xmlDocument = new xmlReader.XmlDocument(fs.readFileSync(file, {encoding: 'utf-8'}));
-                //PROJECT VERSION
-                let projectVersion = readProjectVersionMaven(xmlDocument);
-                if (projectVersion) {
-                    result.set('project_version', projectVersion);
-                }
-
-                //JAVA VERSION
-                let javaVersion = readJavaVersionMaven(xmlDocument);
-                if (javaVersion && (!result.get('java_version') || (result.get('java_version') as number) < javaVersion)) {
-                    result.set('java_version', javaVersion);
-                }
-
-                if (fs.existsSync(path.join(dir, 'mvnw.cmd')) || fs.existsSync(path.join(dir, 'mvnw')) || fs.existsSync(wrapperMapFile)) {
-                    result.set('has_wrapper', true);
-                }
-
-                if (fs.existsSync(wrapperMapFile)) {
-                    result.set('builder_version', readBuilderVersion((wrapperMapFile as PathOrFileDescriptor), (result.get('builder_version') as string | null)));
-                }
-            } catch (err) {
-                console.error(err);
-            }
+    for (const line of changesLog.split(/\r?\n|\r/)) {
+        if (!isEmpty(line) && line.includes('.')) {
+            result.add(line.trim())
         }
-    )
-
-    result.set('cmd', result.get('has_wrapper') ? (process.platform === "win32" ? 'mvn.cmd' : './mvnw') : 'mvn');
-    result.set('cmd_test', result.get('cmd') + ' clean test');
-    result.set('cmd_build', result.get('cmd') + ' clean package -DskipTests');
-    result.set('cmd_test_build', result.get('cmd') + ' clean package');
-    result.set('cmd_update_deps', result.get('cmd') + ' versions:use-latest-versions -B -q -DgenerateBackupPoms=false');
-    result.set('cmd_update_plugs', result.get('cmd') + ' versions:use-latest-versions -B -q -DgenerateBackupPoms=false');
-    result.set('cmd_update_props', result.get('cmd') + ' versions:update-properties -B -q -DgenerateBackupPoms=false');
-    result.set('cmd_update_parent', result.get('cmd') + ' versions:update-parent -B -q -DgenerateBackupPoms=false');
-    result.set('cmd_resolve_plugs', result.get('cmd') + ' dependency:resolve-plugins -B -q');
-    result.set('cmd_resolve_deps', result.get('cmd') + ' dependency:resolve -B -q');
-    result.set('cmd_update_wrapper', result.get('cmd') + ' -B -q -N io.takari:maven:wrapper');
-    return result;
+    }
+    return ignoreFiles && ignoreFiles.size > 0 ? new Set([...result].filter(file => {
+        return !Array.from(ignoreFiles).some(regex => new RegExp(regex).test(file));
+    })) : result;
 }
 
-function readProjectVersionMaven(xmlDocument: XmlDocument): string | null | undefined {
-    return getNodeByPath(xmlDocument, ['version'], 0)
-        ?.filter(node => node.type === 'element')
-        ?.map(node => (node as XmlElement).val?.trim())[0];
+function hasFileEnding(fileNames: Set<string>, fileEndings: string[]): boolean {
+    return Array.from(fileNames).some(fileName => {
+        return fileEndings.some(ending => fileName.toLowerCase().endsWith(ending.toLowerCase()));
+    });
 }
 
-function readJavaVersionMaven(xmlDocument: XmlDocument): number | null | undefined {
-    let propertyMap = new Map(
-        getNodeByPath(xmlDocument, ['properties'], 0)[0]
-            ?.children.filter(node => node.type === 'element')
-            ?.map(node => [(node as XmlElement).name, (node as XmlElement).val])
-    );
-    let javaVersions = getNodeByPath(xmlDocument, ['build', 'plugins', 'plugin|artifactId=maven-compiler-plugin', 'configuration'], 0)[0]
-        ?.children.filter(node => node.type === 'element')
-        ?.map(node => (node as XmlElement).val?.trim());
-
-
-    let result: number | null = null;
-    javaVersions?.forEach(jv => {
-        let version = javaVersionOf(jv.startsWith('${') ? propertyMap.get(jv.substring(2, jv.length - 1)) : jv);
-        result = version && (!result || result < version) ? version : result;
-    })
-    for (const pjv of ['java.version', 'java-version', 'maven.compiler.source', 'maven.compiler.target', 'maven.compiler.release']) {
-        let jv = propertyMap.get(pjv);
-        let version = jv ? javaVersionOf(jv.startsWith('${') ? propertyMap.get(jv.substring(2, jv.length - 1)) : jv) : undefined;
-        result = version && (!result || result < version) ? version : result;
+function setLatestTag(workDir: PathOrFileDescriptor, result: Map<string, ResultType>, tagFallback: string): Map<string, ResultType> {
+    let latestTag = cmd(workDir, 'git describe --tags --abbrev=0');
+    if (!isEmpty(latestTag)) {
+        result.set('tag_latest', latestTag);
+        result.set('sha_latest_tag', cmd(workDir, 'git rev-list -n 1 ' + latestTag));
+    } else {
+        result.set('tag_latest', isEmpty(tagFallback) ? null : tagFallback);
+        result.set('sha_latest_tag', result.get('sha_latest') || null);
     }
     return result;
 }
 
-function readGradle(gradleFiles: PathOrFileDescriptor[], result: Map<string, string | number | boolean | null>): Map<string, string | number | boolean | null> {
-    let gradleLTS = '7.5.1';
-    result.set('is_gradle', gradleFiles.length > 0);
-    gradleFiles.forEach(file => {
-            try {
-                let dir = path.dirname(file.toString());
-                let wrapperMapFile = path.join(dir, 'gradle', 'wrapper', 'gradle-wrapper.properties');
+function deleteBranchPrefix(branchName: string | null): string | null {
+    let index = branchName == null ? -1 : branchName.lastIndexOf('/');
+    return branchName != null && index > 0 ? branchName.substring(index + 1) : branchName;
+}
 
-                let propertyMap = readPropertiesGradle(file);
+function getDefaultBranch(workDir: PathOrFileDescriptor, fallback: string): string {
+    let result = deleteBranchPrefix(cmd(workDir, 'git symbolic-ref refs/remotes/origin/HEAD', 'git symbolic-ref refs/remotes/origin/HEAD'));
+    result = isEmpty(result) ? deleteBranchPrefix(cmd(workDir, 'git symbolic-ref HEAD')) : result;
+    result = !isEmpty(result) && result != null ? result.trim() : result;
+    return isEmpty(result) || result == null ? fallback : result;
+}
 
-                //PROJECT_VERSION
-                let projectVersion = getMapValue(propertyMap, 'project.version', '\\d+');
-                if (projectVersion) {
-                    result.set('project_version', projectVersion);
-                }
+function isEmpty(input: string | null | undefined): boolean {
+    return !input || input.trim().length === 0;
 
-                //JAVA_VERSION
-                let javaVersion = readJavaVersionGradle(propertyMap);
-                if (javaVersion && (!result.get('java_version') || (result.get('java_version') as number) < javaVersion)) {
-                    result.set('java_version', javaVersion);
-                }
+}
 
-                if (fs.existsSync(path.join(dir, 'gradle.bat')) || fs.existsSync(path.join(dir, 'gradlew')) || fs.existsSync(wrapperMapFile)) {
-                    result.set('has_wrapper', true);
-                }
+function cmd(workDir: PathOrFileDescriptor, ...commands: string[]): string | null {
+    return execCmd(workDir, false, commands);
+}
 
-                if (fs.existsSync(wrapperMapFile)) {
-                    result.set('builder_version', readBuilderVersion(wrapperMapFile, (result.get('builder_version') as string | null)));
-                }
-            } catch (err) {
-                console.error(err);
+function cmdLog(workDir: PathOrFileDescriptor, ...commands: string[]): string | null {
+    return execCmd(workDir, true, commands);
+}
+
+function execCmd(workDir: PathOrFileDescriptor, logError: boolean, commands: string[]): string | null {
+    for (const command of commands) {
+        let result = null;
+        try {
+            let devNull = os.platform().toLowerCase().startsWith('win') ? " 2>NUL" : " 2>/dev/null"
+            result = require('child_process').execSync(command + (logError ? devNull : ''), {
+                cwd: workDir.toString(),
+                encoding: 'utf8',
+                timeout: 10000
+            });
+        } catch (error) {
+            if (logError) {
+                console.debug(error)
             }
+            continue;
         }
-    )
-    result.set('cmd', result.get('has_wrapper') ? (process.platform === "win32" ? 'gradle.bat' : './gradlew') : 'gradle');
-    result.set('cmd_test', result.get('cmd') + ' clean test');
-    result.set('cmd_build', result.get('cmd') + ' clean build -x test');
-    result.set('cmd_test_build', result.get('cmd') + ' clean build');
-    result.set('cmd_update_deps', result.get('cmd') + ' check');
-    result.set('cmd_update_plugs', result.get('cmd') + ' check');
-    result.set('cmd_update_props', result.get('cmd') + ' check');
-    result.set('cmd_update_parent', result.get('cmd') + ' check');
-    result.set('cmd_resolve_plugs', result.get('cmd') + ' check');
-    result.set('cmd_resolve_deps', result.get('cmd') + ' --refresh-dependencies check -x test');
-    result.set('cmd_update_wrapper', result.get('cmd') + ' wrapper --gradle-version ' + gradleLTS);
-    return result;
-}
-
-function readBuilderVersion(wrapperMapFile: PathOrFileDescriptor, fallback: string | null): string | null {
-    if (fs.existsSync(wrapperMapFile.toString())) {
-        let wrapperMap = readPropertiesGradle(wrapperMapFile);
-        let distributionUrl = wrapperMap.get('distributionUrl')
-        let builderVersion = distributionUrl ? new RegExp('(\\d[\._]?){2,}').exec(distributionUrl) : null;
-        return builderVersion ? builderVersion[0] : fallback;
-    }
-    return fallback;
-}
-
-function javaVersionOf(string: string | undefined | null): number | null {
-    if (string) {
-        string = string.includes("_") ? string.substring(string.indexOf("_") + 1) : string;
-        string = string.includes(".") ? string.substring(string.indexOf(".") + 1) : string;
-        return parseInt(string.trim());
+        if (!isEmpty(result)) {
+            return result.trim();
+        }
     }
     return null;
 }
-
-function readJavaVersionGradle(propertyMap: Map<string, string>): number | null {
-    let value = getMapValue(propertyMap, 'sourceCompatibility', '\\d+') || getMapValue(propertyMap, 'targetCompatibility', '\\d+')
-    return value ? javaVersionOf(value) : null;
-}
-
-function readPropertiesGradle(file: PathOrFileDescriptor): Map<string, string> {
-    let result = new Map<string, string>;
-    fs.readFileSync(file, {encoding: 'utf-8'}).split(/\r?\n/).forEach(function (line: string) {
-        let eq = line.indexOf('=');
-        if (eq > 0) {
-            let key = line.substring(0, eq).trim()
-            let spaceIndex = key.lastIndexOf(' ');
-            key = spaceIndex > 0 ? key.substring(spaceIndex + 1).trim() : key;
-            let value = line.substring(eq + 1).trim().replace(/['"]+/g, '');
-            let counter = getKeyOccurrence(result, key)
-            result.set(counter > 0 ? key + '#' + counter : key, value);
-        } else if (!result.get('sourceCompatibility') && !result.get('targetCompatibility') && line.includes('languageVersion.set')) {
-            result.set('targetCompatibility', line.trim()
-                .replace('JavaLanguageVersion', '')
-                .replace('languageVersion.set', '')
-                .replace('.of', '').trim()
-                .replace(/[()]+/g, '')
-                .replace(/['"]+/g, '')
-            );
-        }
-    })
-    return result;
-}
-
-function listGradleFiles(workDir: PathOrFileDescriptor, deep: number): PathOrFileDescriptor[] {
-    return listFiles(workDir, !deep ? 1 : deep, 'build\.gradle.*', [], 0);
-}
-
-function listMavenFiles(workDir: PathOrFileDescriptor, deep: number): PathOrFileDescriptor[] {
-    return listFiles(workDir, !deep ? 1 : deep, 'pom.*\.xml', [], 0);
-}
-
-function listFiles(dir: PathOrFileDescriptor, deep: number, filter: string, resultList: PathOrFileDescriptor[], deep_current: number): PathOrFileDescriptor[] {
-    deep = deep || 1
-    deep_current = deep_current || 0
-    resultList = resultList || []
-    if (deep > -1 && deep_current > deep) {
-        return resultList;
-    }
-    const files = fs.readdirSync(dir.toString(), {withFileTypes: true});
-    for (const file of files) {
-        if (file.isDirectory()) {
-            listFiles(path.join(dir.toString(), file.name), deep, filter, resultList, deep_current++);
-        } else if (!filter || new RegExp(filter).test(file.name)) {
-            resultList.push(path.join(dir.toString(), file.name));
-        }
-    }
-    return resultList;
-}
-
 
 function getWorkingDirectory(workspace: string | undefined | null): PathOrFileDescriptor {
     return workspace && fs.existsSync(workspace) ? workspace : process.cwd();
 }
 
-function getNodeByPath(node: XmlElement, nodeNames: string[], index: number): XmlElement[] {
-    index = index || 0;
-    if (nodeNames.length === index) {
-        return [node];
-    }
-
-    let nodeName = nodeNames[index].split('|');
-    return node.childrenNamed(nodeName[0])
-        .filter(node => node.type === 'element')
-        .filter(node => matchFilter(node, nodeName[1]))
-        .filter(node => node.childrenNamed(nodeNames[index + 1]))
-        .flatMap(node => getNodeByPath(node, nodeNames, index + 1))
+function sortMap(input: Map<string, any>): Map<string, any> {
+    const sortedEntries = Array.from(input.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+    return new Map(sortedEntries);
 }
 
-function matchFilter(node: XmlElement, filter: string): boolean {
-    if (!node || !filter) {
-        return true;
-    }
-    let kv = filter.split('=');
-    let childNode = node.childrenNamed(kv[0])
-    return childNode && childNode[0]?.val === kv[1];
-}
-
-function toLegacyJavaVersion(javaVersion: string | number | boolean | null | undefined): string | null {
-    if (javaVersion) {
-        return (javaVersion as number) < 10 ? '1.' + javaVersion : javaVersion.toString();
-    }
-    return null;
-}
-
-
-function getKeyOccurrence(map: Map<string, string>, key: string): number {
-    if (map.get(key)) {
-        let count = 0;
-        map.forEach((v, k) => {
-            k = k.includes('#') ? k.substring(0, k.indexOf('#')) : k;
-            if (key === k) {
-                count++
-            }
-        });
-        return count;
-    }
-    return 0;
-}
-
-
-function getMapValue(map: Map<string, string>, key: string, regex: string | undefined | null): string | null {
-    if (map.get(key)) {
-        for (let [mapKey, mapValue] of map) {
-            if (mapValue !== key && (mapKey === key || mapKey.startsWith(key + '#'))) {
-                mapValue = map.get(mapValue) || mapValue
-                if (!regex || (mapValue && new RegExp(regex).exec(mapValue))) {
-                    return mapValue;
-                }
-            }
-        }
-    }
-    return null;
-}
-
-module.exports = {run, run2, listGradleFiles, listMavenFiles};
+module.exports = {run, cmd, cmdLog};

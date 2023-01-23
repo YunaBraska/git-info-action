@@ -1,10 +1,6 @@
 # git-info-action
 
-Reads out the java version from gradle or maven.
-
-This is a parser, it won't run any gradle/maven command as these commands are really expensive in time and requirements.
-
-It also creates some pre-generated commends dependent on the build tool and OS. e.g. gradle, gradlew, gradle.bat
+Reads git information
 
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=HFHFUT3G6TZF6)
 
@@ -23,67 +19,58 @@ It also creates some pre-generated commends dependent on the build tool and OS. 
 
 ```yaml
 # RUNNER
-- name: "Read Java Info"
-  id: "java_info"
+- name: "Read Git Info"
+  id: "git_info"
   uses: YunaBraska/git-info-action@main
 
   # CONFIGS (Optional)
   with:
-    deep: '-1'
-    work-dir: '.'
-    jv-fallback: 17
-    pv-fallback: '0.0.1'
+    workDir: '.'
+    ignore-files: '.java, .groovy, .jar'
+    branch-fallback: 'main'
+    tag-fallback: '0.0.1'
 
   # PRINT
-- name: "Print Java Version"
-  run: echo "java_version [${{ steps.java_info.outputs.java_version }}]"
-
-  # SETUP JAVA
-- name: "Setup Java"
-  uses: actions/setup-java@main
-  with:
-    java-version: ${{ steps.java_info.outputs.java_version }}
-    distribution: 'adopt'
-
-  # RUN TESTS
-- name: "Run tests"
-  run: sh ${{ steps.java_info.outputs.cmd_test }}
+- name: "Print Git Info"
+  run: |
+    echo "is_git_repo          [${{ steps.git_info.outputs.is_git_repo }}]"
+    echo "tag_latest           [${{ steps.git_info.outputs.tag_latest }}]"
+    echo "sha_latest           [${{ steps.git_info.outputs.sha_latest }}]"
+    echo "sha_latest_tag       [${{ steps.git_info.outputs.sha_latest_tag }}]"
+    echo "branch               [${{ steps.git_info.outputs.branch }}]"
+    echo "branch_default       [${{ steps.git_info.outputs.branch_default }}]"
+    echo "has_changes          [${{ steps.git_info.outputs.has_changes }}]"
+    echo "has_local_changes    [${{ steps.git_info.outputs.has_local_changes }}]"
+    echo "x_has_changes_python [${{ steps.git_info.outputs.x_has_changes_python }}]"
 
 ```
 
-* Hint for multi-modules: The highest java version will win the race.
-
 ### Inputs
 
-| parameter   | default      | description                                                    |
-|-------------|--------------|----------------------------------------------------------------|
-| work-dir    | '.'          | folder scan ('.' == current)                                   |
-| deep        | -1           | folder scan deep (-1 == endless)                               |
-| jv-fallback | <Latest_LTS> | fallback for "java_version" if no java version was found       |
-| pv-fallback | null         | fallback for "project_version" if no project version was found |
+| parameter       | default | description                                                            |
+|-----------------|---------|------------------------------------------------------------------------|
+| work-dir        | '.'     | work dir                                                               |
+| ignore-files    | null    | regex list to ignore files (comma separated) e.g. '/\.txt$/, /\.doc$/' |
+| branch-fallback | 'main'  | fallback if no branch_default could be found                           |
+| tag-fallback    | null    | fallback if no tag could be found                                      |
 
 ### Outputs
 
-| Name                | default      | description                                                                                                                 |
-|---------------------|--------------|-----------------------------------------------------------------------------------------------------------------------------|
-| project_version     | null         | project version - parsed from build files e.g. 1.2.3                                                                        |
-| java_version        | <Latest_LTS> | java version - parsed from build files e.g. 6,7,8,9,10,11                                                                   |
-| java_version_legacy | <Latest_LTS> | java version - parsed from build files e.g. 1.6,1.7,1.8,1.9,10,11                                                           |
-| has_wrapper         | false        | if a wrapper exists - e.g. gradlew, mvnw,...                                                                                |
-| builder_version     | null         | version of the wrapper                                                                                                      |
-| is_gradle           | false        | true if a gradle build file was found                                                                                       |
-| is_maven            | false        | true if a maven build file was found                                                                                        |
-| cmd                 | -            | command e.g. <br>*  gradle / gradlew / gradle.bat <br>*  mvn / mvnw / mvn.bat                                               |
-| cmd_test            | -            | command e.g. <br>*  gradle clean test <br>*  mvn clean test                                                                 |
-| cmd_build           | -            | command e.g. <br>*  gradle clean build -x test  <br>*  mvn clean package -DskipTests                                        |
-| cmd_test_build      | -            | command e.g. <br>*  gradle clean build  <br>*  mvn clean package                                                            |
-| cmd_update_deps     | -            | command e.g. <br>*  gradle check  <br>*  mvn versions:use-latest-versions -B -q -DgenerateBackupPoms=false                  |
-| cmd_update_plugs    | -            | command e.g.  <br>*  gradle check  <br>*  mvn versions:use-latest-versions -B -q -DgenerateBackupPoms=false                 |
-| cmd_update_props    | -            | command e.g. <br>*  gradle check  <br>*  mvn versions:update-properties -B -q -DgenerateBackupPoms=false                    |
-| cmd_update_parent   | -            | command e.g. <br>*  gradle check  <br>*  mvn versions:update-parent -B -q -DgenerateBackupPoms=false                        |
-| cmd_resolve_deps    | -            | command e.g. <br>*  gradle check  <br>*  mvn -B -q dependency:resolve -Dmaven.test.skip=true                                |
-| cmd_resolve_plugs   | -            | command e.g. <br> *  gradle --refresh-dependencies check -x test <br>*  mvn -B -q dependency:resolve -Dmaven.test.skip=true |
-| cmd_update_wrapper  | -            | command  <br>*  gradle wrapper --gradle-version <Latest_LTS>  <br>*  mvn -B -q -N io.takari:maven:wrapper                   |
+| Name                       | default | description                                                    |
+|----------------------------|---------|----------------------------------------------------------------|
+| branch                     | main    | current branch                                                 |
+| branch_default             | main    | default branch                                                 |
+| commits_ahead              | 0       | branch commits that are not in the branch_default              |
+| commits_behind             | 0       | branch_default commits that are not in the branch              |
+| is_default_branch          | false   | true if branch == branch_default                               |
+| has_changes                | false   | true if sha_latest != sha_latest_tag                           |
+| has_local_changes          | false   | true if there are changes on non committed files               |
+| sha_latest                 | null    | sha from latest commit                                         |
+| sha_latest_tag             | null    | sha from latest tag                                            |
+| tag_latest                 | 0.0.1   | latest tag                                                     |
+| x_has_changes_<lang>       | false   | true on file changes exists between current sha and latest tag |
+| x_has_local_changes_<lang> | false   | true on non committed files                                    |
+| x_language_list            | -       | a list of supported language for x_has_changes_<lang>          |
 
 ### \[DEV] Setup Environment
 
@@ -92,6 +79,9 @@ It also creates some pre-generated commends dependent on the build tool and OS. 
 * Run `npm run build` to "compile" `index.ts` to `./lib/index.js`
 * NodeJs 16: do not upgrade nodeJs as GitHub actions latest version is 16
 * Hint: please do not remove the node modules as they are required for custom GitHub actions :(
+
+### TODOs
+* [ ] read semver strategy from semantic commits
 
 [build_shield]: https://github.com/YunaBraska/git-info-action/workflows/RELEASE/badge.svg
 

@@ -1,151 +1,229 @@
+import * as fs from "fs";
 import {PathOrFileDescriptor} from "fs";
+import * as os from 'os';
+import * as path from 'path';
 
 const main = require('../src/index')
-const path = require('path');
-const fs = require('fs');
 
-// ########## GRADLE ##########
+let workDir: PathOrFileDescriptor;
 
-test('[GRADLE] Read empty dir', () => {
-    let dir = createEmptyDir(path.join(__dirname, 'resources/gradle/empty'));
-    let result = main.run2(dir);
+beforeEach(() => {
+    workDir = path.join(os.tmpdir(), 'git_info_action_test');
+    removeDir(workDir);
+    fs.mkdirSync(workDir);
 });
 
-test('[GRADLE] Read highest Java Version should be 17', () => {
-    let result_src = main.run(path.join(__dirname, 'resources/gradle/source'), -1, -1);
-    expect(result_src.get('java_version')).toEqual(17)
-    expect(result_src.get('is_gradle')).toEqual(true)
-    expect(result_src.get('is_maven')).toEqual(false)
-    expect(result_src.get('has_wrapper')).toEqual(true)
-    expect(result_src.get('builder_version')).toEqual('7.5')
-    expect(result_src.get('cmd')).toEqual(process.platform === "win32" ? 'gradle.bat' : './gradlew')
-
-    let result_lv = main.run(path.join(__dirname, 'resources/gradle/language_version'), -1, -1);
-    expect(result_lv.get('java_version')).toEqual(17)
-    expect(result_lv.get('is_gradle')).toEqual(true)
-    expect(result_lv.get('is_maven')).toEqual(false)
-    expect(result_lv.get('has_wrapper')).toEqual(true)
-    expect(result_lv.get('builder_version')).toEqual('7.5')
-    expect(result_lv.get('cmd')).toEqual(process.platform === "win32" ? 'gradle.bat' : './gradlew')
+afterEach(() => {
+    removeDir(workDir);
 });
 
-test('[GRADLE] Read highest Java Version with deep limit 1 should be 11', () => {
-    let result_src = main.run(path.join(__dirname, 'resources/gradle'), 1, -1);
-    expect(result_src.get('java_version')).toEqual(11)
-    expect(result_src.get('is_gradle')).toEqual(true)
-    expect(result_src.get('is_maven')).toEqual(false)
-    expect(result_src.get('has_wrapper')).toEqual(false)
-    expect(result_src.get('builder_version')).toEqual(null)
-    expect(result_src.get('cmd')).toEqual('gradle')
-
-    let result_lv = main.run(path.join(__dirname, 'resources/gradle/language_version'), 1, -1);
-    expect(result_lv.get('java_version')).toEqual(11)
-    expect(result_lv.get('is_gradle')).toEqual(true)
-    expect(result_lv.get('is_maven')).toEqual(false)
-    expect(result_lv.get('has_wrapper')).toEqual(false)
-    expect(result_lv.get('builder_version')).toEqual(null)
-    expect(result_lv.get('cmd')).toEqual('gradle')
+test('Test on empty dir', () => {
+    let result = main.run(workDir, new Set<string>(), null, null);
+    expect(result.get('ignore-files')).toEqual(null)
+    expect(result.get('branch-fallback')).toEqual('main')
+    expect(result.get('tag-fallback')).toEqual(null)
+    expect(result.get('is_git_repo')).toEqual(false)
+    expect(result.get('branch')).toEqual(null)
+    expect(result.get('branch_default')).toEqual('main')
+    expect(result.get('is_default_branch')).toEqual(false)
+    expect(result.get('sha_latest')).toEqual(null)
+    expect(result.get('sha_latest_tag')).toEqual(null)
+    expect(result.get('has_changes')).toEqual(false)
+    expect(result.get('has_local_changes')).toEqual(false)
+    expect(result.get('commits_ahead')).toEqual(0)
+    expect(result.get('commits_behind')).toEqual(0)
+    expect(result.get('x_has_changes_java')).toEqual(false)
+    expect(result.get('x_has_local_changes_java')).toEqual(false)
 });
 
-test('[GRADLE] Read each file should have expected result', () => {
-    (main.listGradleFiles(path.dirname(__filename), -1) as PathOrFileDescriptor[]).forEach(file => {
-        let dir = path.dirname(file.toString());
-        let result = main.run(dir, 1);
-
-        let hasWrapper = dir.includes('wrapper');
-        let expectedVersion = javaVersionOfPath(dir);
-        let expectedProjectVersion = projectVersionOfPath(dir);
-        expect(result.get('java_version')).toEqual(expectedVersion)
-        expect(result.get('project_version')).toEqual(expectedProjectVersion)
-        expect(result.get('java_version_legacy')).toEqual(expectedVersion === 8 ? '1.8' : expectedVersion?.toString())
-        expect(result.get('has_wrapper')).toEqual(hasWrapper)
-        expect(result.get('is_gradle')).toEqual(true)
-        expect(result.get('is_maven')).toEqual(false)
-        expect(result.get('builder_version')).toEqual(hasWrapper ? '7.5' : null)
-        expect(result.get('cmd')).toEqual(hasWrapper ? (process.platform === "win32" ? 'gradle.bat' : './gradlew') : 'gradle')
-    });
+test('Test on empty dir with "branch-fallback"', () => {
+    let result = main.run(workDir, new Set<string>(), 'my_fallback_branch', null);
+    expect(result.get('ignore-files')).toEqual(null)
+    expect(result.get('branch-fallback')).toEqual('my_fallback_branch')
+    expect(result.get('tag-fallback')).toEqual(null)
+    expect(result.get('is_git_repo')).toEqual(false)
+    expect(result.get('branch')).toEqual(null)
+    expect(result.get('branch_default')).toEqual('my_fallback_branch')
+    expect(result.get('is_default_branch')).toEqual(false)
+    expect(result.get('sha_latest')).toEqual(null)
+    expect(result.get('sha_latest_tag')).toEqual(null)
+    expect(result.get('has_changes')).toEqual(false)
+    expect(result.get('has_local_changes')).toEqual(false)
+    expect(result.get('commits_ahead')).toEqual(0)
+    expect(result.get('commits_behind')).toEqual(0)
+    expect(result.get('x_has_changes_java')).toEqual(false)
+    expect(result.get('x_has_local_changes_java')).toEqual(false)
 });
 
-// ########## MAVEN ##########
-
-test('[MAVEN] Read empty dir', () => {
-    let dir = createEmptyDir(path.join(__dirname, 'resources/maven/empty'));
-    let result = main.run(dir, -1, 17);
-    expect(result.get('java_version')).toEqual(17)
-    expect(result.get('is_gradle')).toEqual(false)
-    expect(result.get('is_maven')).toEqual(false)
-    expect(result.get('has_wrapper')).toEqual(false)
-    expect(result.get('builder_version')).toEqual(null)
-    expect(result.get('cmd')).toEqual(null)
+test('Test on empty dir with "tag-fallback"', () => {
+    let result = main.run(workDir, new Set<string>(), null, '1.2.3');
+    expect(result.get('ignore-files')).toEqual(null)
+    expect(result.get('branch-fallback')).toEqual('main')
+    expect(result.get('tag-fallback')).toEqual('1.2.3')
+    expect(result.get('is_git_repo')).toEqual(false)
+    expect(result.get('branch')).toEqual(null)
+    expect(result.get('branch_default')).toEqual('main')
+    expect(result.get('is_default_branch')).toEqual(false)
+    expect(result.get('tag_latest')).toEqual('1.2.3')
+    expect(result.get('sha_latest')).toEqual(null)
+    expect(result.get('sha_latest_tag')).toEqual(null)
+    expect(result.get('has_changes')).toEqual(false)
+    expect(result.get('has_local_changes')).toEqual(false)
+    expect(result.get('commits_ahead')).toEqual(0)
+    expect(result.get('commits_behind')).toEqual(0)
+    expect(result.get('x_has_changes_java')).toEqual(false)
+    expect(result.get('x_has_local_changes_java')).toEqual(false)
 });
 
-test('[MAVEN] Read highest Java Version should be 17', () => {
-    let result_src = main.run(path.join(__dirname, 'resources/maven'), -1, -1);
-    expect(result_src.get('java_version')).toEqual(17)
-    expect(result_src.get('is_maven')).toEqual(true)
-    expect(result_src.get('has_wrapper')).toEqual(true)
-    expect(result_src.get('builder_version')).toEqual('3.6.3')
-    expect(result_src.get('cmd')).toEqual(process.platform === "win32" ? 'mvnw.cmd' : './mvnw')
+test('Test with file [howdy.java]', () => {
+    setupGit(workDir)
+    fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
+
+    let result = main.run(workDir, new Set<string>(), null, null);
+    expect(result.get('ignore-files')).toEqual(null)
+    expect(result.get('branch-fallback')).toEqual('main')
+    expect(result.get('tag-fallback')).toEqual(null)
+    expect(result.get('is_git_repo')).toEqual(true)
+    expect(result.get('branch')).toEqual('master')
+    expect(result.get('branch_default')).toEqual('master')
+    expect(result.get('is_default_branch')).toEqual(true)
+    expect(result.get('tag_latest')).toEqual(null)
+    expect(result.get('sha_latest')).toEqual(null)
+    expect(result.get('sha_latest_tag')).toEqual(null)
+    expect(result.get('has_changes')).toEqual(false)
+    expect(result.get('has_local_changes')).toEqual(true)
+    expect(result.get('commits_ahead')).toEqual(0)
+    expect(result.get('commits_behind')).toEqual(0)
+    expect(result.get('x_has_changes_java')).toEqual(false)
+    expect(result.get('x_has_local_changes_java')).toEqual(true)
 });
 
-test('[MAVEN] Read highest Java Version with deep limit 1 should be 11', () => {
-    let result_source = main.run(path.join(__dirname, 'resources/maven/m_release'), 1, -1);
-    expect(result_source.get('java_version')).toEqual(11)
-    expect(result_source.get('is_maven')).toEqual(true)
-    expect(result_source.get('has_wrapper')).toEqual(false)
-    expect(result_source.get('builder_version')).toEqual(null)
-    expect(result_source.get('cmd')).toEqual('mvn')
+test('Test with file [howdy.java] && commit', () => {
+    setupGit(workDir)
+    fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
+    main.cmdLog(workDir, 'git add .')
+    main.cmdLog(workDir, 'git commit -am "init commit"')
 
-    let result_target = main.run(path.join(__dirname, 'resources/maven/m_release'), 1, -1);
-    expect(result_target.get('java_version')).toEqual(11)
-    expect(result_target.get('is_maven')).toEqual(true)
-    expect(result_target.get('has_wrapper')).toEqual(false)
-    expect(result_target.get('builder_version')).toEqual(null)
-    expect(result_target.get('cmd')).toEqual('mvn')
-
-    let result_release = main.run(path.join(__dirname, 'resources/maven/m_release'), 1, -1);
-    expect(result_release.get('java_version')).toEqual(11)
-    expect(result_release.get('is_maven')).toEqual(true)
-    expect(result_release.get('has_wrapper')).toEqual(false)
-    expect(result_release.get('builder_version')).toEqual(null)
-    expect(result_release.get('cmd')).toEqual('mvn')
+    let result = main.run(workDir, new Set<string>(), null, null);
+    expect(result.get('ignore-files')).toEqual(null)
+    expect(result.get('branch-fallback')).toEqual('main')
+    expect(result.get('tag-fallback')).toEqual(null)
+    expect(result.get('is_git_repo')).toEqual(true)
+    expect(result.get('branch')).toEqual('master')
+    expect(result.get('branch_default')).toEqual('master')
+    expect(result.get('is_default_branch')).toEqual(true)
+    expect(result.get('tag_latest')).toEqual(null)
+    expect(result.get('sha_latest')).not.toEqual(null)
+    expect(result.get('sha_latest_tag')).not.toEqual(null)
+    expect(result.get('has_changes')).toEqual(false)
+    expect(result.get('has_local_changes')).toEqual(false)
+    expect(result.get('commits_ahead')).toEqual(0)
+    expect(result.get('commits_behind')).toEqual(0)
+    expect(result.get('x_has_changes_java')).toEqual(false)
+    expect(result.get('x_has_local_changes_java')).toEqual(false)
 });
 
-test('[MAVEN] Read each file should have expected result', () => {
-    (main.listMavenFiles(path.dirname(__filename), -1) as PathOrFileDescriptor[]).forEach(file => {
-        let dir = path.dirname(file.toString());
-        let result = main.run(dir, 1);
+test('Test with file [howdy.java] && branch && default branch [init] && commit', () => {
+    setupGit(workDir)
+    main.cmdLog(workDir, 'git branch -m main')
+    main.cmdLog(workDir, 'git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main')
+    fs.writeFileSync(path.join(workDir.toString(), "main.file"), "File for main branch");
+    main.cmdLog(workDir, 'git add .')
+    main.cmdLog(workDir, 'git commit -am "init commit"')
 
-        let hasWrapper = dir.includes('wrapper');
-        let expectedVersion = javaVersionOfPath(dir);
-        let expectedProjectVersion = projectVersionOfPath(dir) || '0.0.1';
-        expect(result.get('java_version')).toEqual(expectedVersion)
-        expect(result.get('project_version')).toEqual(expectedProjectVersion)
-        expect(result.get('java_version_legacy')).toEqual(expectedVersion === 8 ? '1.8' : expectedVersion?.toString())
-        expect(result.get('has_wrapper')).toEqual(hasWrapper)
-        expect(result.get('is_maven')).toEqual(true)
-        expect(result.get('builder_version')).toEqual(hasWrapper ? '3.6.3' : null)
-        expect(result.get('cmd')).toEqual(hasWrapper ? (process.platform === "win32" ? 'mvnw.cmd' : './mvnw') : 'mvn')
-    });
+    main.cmdLog(workDir, 'git checkout -b add_file')
+    fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
+    main.cmdLog(workDir, 'git add .')
+    main.cmdLog(workDir, 'git commit -am "add file"')
+
+    let result = main.run(workDir, new Set<string>(), null, null);
+    expect(result.get('ignore-files')).toEqual(null)
+    expect(result.get('branch-fallback')).toEqual('main')
+    expect(result.get('tag-fallback')).toEqual(null)
+    expect(result.get('is_git_repo')).toEqual(true)
+    expect(result.get('branch')).toEqual('add_file')
+    expect(result.get('branch_default')).toEqual('main')
+    expect(result.get('is_default_branch')).toEqual(false)
+    expect(result.get('tag_latest')).toEqual(null)
+    expect(result.get('sha_latest')).not.toEqual(null)
+    expect(result.get('sha_latest_tag')).not.toEqual(null)
+    expect(result.get('has_changes')).toEqual(false)
+    expect(result.get('has_local_changes')).toEqual(false)
+    expect(result.get('commits_ahead')).toEqual(1)
+    expect(result.get('commits_behind')).toEqual(0)
+    expect(result.get('x_has_changes_java')).toEqual(false)
+    expect(result.get('x_has_local_changes_java')).toEqual(false)
 });
 
-function createEmptyDir(dir: PathOrFileDescriptor): PathOrFileDescriptor {
-    if (!fs.existsSync(dir.toString())) {
-        fs.mkdirSync(dir.toString());
+test('Test with ignore files', () => {
+    setupGit(workDir)
+    fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
+    fs.writeFileSync(path.join(workDir.toString(), "howdy.py"), "Hello there!");
+
+    let result = main.run(workDir, new Set<string>(['.java', '.jar']), null, null);
+    expect(result.get('ignore-files')).toEqual(".java, .jar")
+    expect(result.get('branch-fallback')).toEqual('main')
+    expect(result.get('tag-fallback')).toEqual(null)
+    expect(result.get('is_git_repo')).toEqual(true)
+    expect(result.get('branch')).toEqual('master')
+    expect(result.get('branch_default')).toEqual('master')
+    expect(result.get('is_default_branch')).toEqual(true)
+    expect(result.get('tag_latest')).toEqual(null)
+    expect(result.get('sha_latest')).toEqual(null)
+    expect(result.get('sha_latest_tag')).toEqual(null)
+    expect(result.get('has_changes')).toEqual(false)
+    expect(result.get('has_local_changes')).toEqual(true)
+    expect(result.get('commits_ahead')).toEqual(0)
+    expect(result.get('commits_behind')).toEqual(0)
+    expect(result.get('x_has_changes_java')).toEqual(false)
+    expect(result.get('x_has_local_changes_java')).toEqual(false)
+    expect(result.get('x_has_local_changes_python')).toEqual(true)
+});
+
+test('Test with ignore files should not have changes', () => {
+    setupGit(workDir)
+    fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
+
+    let result = main.run(workDir, new Set<string>(['.java', '.jar']), null, null);
+    expect(result.get('ignore-files')).toEqual(".java, .jar")
+    expect(result.get('branch-fallback')).toEqual('main')
+    expect(result.get('tag-fallback')).toEqual(null)
+    expect(result.get('is_git_repo')).toEqual(true)
+    expect(result.get('branch')).toEqual('master')
+    expect(result.get('branch_default')).toEqual('master')
+    expect(result.get('is_default_branch')).toEqual(true)
+    expect(result.get('tag_latest')).toEqual(null)
+    expect(result.get('sha_latest')).toEqual(null)
+    expect(result.get('sha_latest_tag')).toEqual(null)
+    expect(result.get('has_changes')).toEqual(false)
+    expect(result.get('has_local_changes')).toEqual(false)
+    expect(result.get('commits_ahead')).toEqual(0)
+    expect(result.get('commits_behind')).toEqual(0)
+    expect(result.get('x_has_changes_java')).toEqual(false)
+    expect(result.get('x_has_local_changes_java')).toEqual(false)
+});
+
+function setupGit(workDir: PathOrFileDescriptor) {
+    main.cmd(workDir, 'git init')
+    main.cmd(workDir, 'git config --file .git/config user.email "kira@yuna.berlin"')
+    main.cmd(workDir, 'git config --file .git/config user.name "Kira"')
+    console.log('is_git_repo' + main.cmd(workDir, 'git rev-parse --is-inside-work-tree', 'git rev-parse --git-dir'))
+}
+
+function removeDir(folderPath: PathOrFileDescriptor) {
+    if (fs.existsSync(folderPath.toString())) {
+        fs.readdirSync(folderPath.toString()).forEach((file, index) => {
+            const curPath = path.join(folderPath.toString(), file);
+            if (fs.lstatSync(curPath).isDirectory()) {
+                // recurse
+                removeDir(curPath);
+            } else {
+                // delete file
+                fs.unlinkSync(curPath);
+            }
+        });
+        fs.rmdirSync(folderPath.toString());
     }
-    return dir;
-}
-
-function javaVersionOfPath(pathString: string): number | null | undefined {
-    let jv = pathString.substring(pathString.lastIndexOf('\\') + 1);
-    jv = jv.substring(jv.lastIndexOf('/') + 1);
-    jv = jv.substring(jv.lastIndexOf('_') + 1);
-    return parseInt(jv.trim())
-}
-
-function projectVersionOfPath(pathString: string): string | null {
-    let regexResult = new RegExp('(\\d[\\.]){2,}\\d').exec(pathString);
-    return regexResult !== null? regexResult[0] : null
 }
 
 

@@ -1,49 +1,45 @@
-name: 'Java Info Action'
-description: 'Detects the Java Version of Gradle and Maven'
+name: 'Git Info Action'
+description: 'Provides git information'
 inputs:
-  deep:
-    description: 'folder scan deep (-1 == endless)'
-    required: false
-    default: '-1'
   work-dir:
-    description: 'folder scan ("." == current)'
+    description: 'work dir'
     required: false
     default: '.'
-  jv-fallback:
-    description: 'java version fallback if no java version was found'
+  ignore-files:
+    description: 'regex list to ignore files (comma separated) e.g. "/\.txt$/, /\.doc$/"'
     required: false
-    default: '17'
-  pv-fallback:
-    description: 'project version fallback if no project version was found'
+    default: 'null'
+  branch-fallback:
+    description: 'fallback if no branch_default could be found'
+    required: false
+    default: 'main'
+  tag-fallback:
+    description: 'fallback if no tag could be found'
     required: false
     default: 'null'
 outputs:
-  java_version:
-    description: 'java version - parsed from build files'
-  has_wrapper:
-    description: 'if a wrapper exists - e.g. gradlew, mvnw,...'
-  is_gradle:
-    description: 'true if a gradle build was found'
-  is_maven:
-    description: 'true if a maven build was found'
-  cmd:
-    description: 'build command e.g. gradle, gradlew, gradle.bat, mvn, mvnw, mvn.bat'
-  cmd_test:
-    description: 'build command e.g. gradle, gradlew, gradle.bat, mvn, mvnw, mvn.bat'
-  cmd_build:
-    description: 'test command e.g. gradle clean build -x test / maven clean package -DskipTests'
-  cmd_test_build:
-    description: 'test command e.g. gradle clean build / maven clean package'
-  cmd_update_deps:
-    description: 'test command e.g. gradle check / maven versions:use-latest-versions -B -q -DgenerateBackupPoms=false'
-  cmd_update_plugs:
-    description: 'test command e.g. gradle check / maven versions:use-latest-versions -B -q -DgenerateBackupPoms=false'
-  cmd_update_props:
-    description: 'test command e.g. gradle check / maven versions:update-properties -B -q -DgenerateBackupPoms=false'
-  cmd_update_parent:
-    description: 'test command e.g. gradle check / maven versions:update-parent -B -q -DgenerateBackupPoms=false'
-  cmd_update_wrapper:
-    description: 'test command e.g. gradle gradle wrapper --gradle-version 7.5.1 / maven -B -q -N io.takari:maven:wrapper'
+  branch:
+    description: 'current branch'
+  branch_default:
+    description: 'default branch'
+  commits_ahead:
+    description: 'branch commits that are not in the branch_default'
+  commits_behind:
+    description: 'branch_default commits that are not in the branch'
+  is_default_branch:
+    description: 'true if branch == branch_default'
+  has_changes:
+    description: 'true if sha_latest != sha_latest_tag'
+  has_local_changes:
+    description: 'true if there are changes on non committed files'
+  sha_latest:
+    description: 'sha from latest commit'
+  sha_latest_tag:
+    description: 'sha from latest tag'
+  tag_latest:
+    description: 'latest tag'
+  x_language_list:
+    description: 'a list of supported language for x_has_changes_<lang>'
 runs:
   using: 'node16'
   main: 'lib/index.js'

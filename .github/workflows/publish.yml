@@ -22,22 +22,19 @@ jobs:
       semver: ${{ steps.git.outputs.semver }}
       new_version: ${{ steps.semver.outputs.new_version }}
     steps:
-      - name: "Validate Input"
+      - name: "Read Input"
         id: "inputs"
         run: |
+          echo "--------------------- VALIDATION ---------------"
           if [ "$GITHUB_ACTOR" != "YunaBraska" ]; then echo "Permission denied for user [$GITHUB_ACTOR]"; exit 1; fi
-
+          echo "--------------------- REF ----------------------"
           ref_default=${{ github.ref_name || github.head_ref }}
           ref="${ref_A:-${ref_B:-${ref_C:-${ref_default}}}}"
-          semver_strategy="${semver_strategy_A:-${semver_strategy_B:-${semver_strategy_C:-patch}}}"
-          has_publish_to_code_climate=$(if [[ "${{secrets.CC_TEST_REPORTER_ID}}" == "" ]]; then echo "false"; else echo "true"; fi)
-
-          echo "semver_strategy [$semver_strategy]"
-          echo "has_publish_to_code_climate [$has_publish_to_code_climate]"
-
           echo "ref=$ref" >> $GITHUB_OUTPUT
+          echo "--------------------- SEMVER STRATEGY ----------"
+          semver_strategy="${semver_strategy_A:-${semver_strategy_B:-${semver_strategy_C:-patch}}}"
+          echo "semver_strategy [$semver_strategy]"
           echo "semver_strategy=$semver_strategy" >> $GITHUB_OUTPUT
-          echo "has_publish_to_code_climate=$has_publish_to_code_climate" >> $GITHUB_OUTPUT
           echo "--------------------- ENVS ---------------------"
           env
         env:
@@ -72,45 +69,23 @@ jobs:
           CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
         with:
           coverageLocations: ${{github.workspace}}/coverage/*.lcov:lcov
-      - name: "Get Java Version"
-        id: "read_java"
+      - name: "Read Git Info"
+        id: "git_info"
         uses: YunaBraska/git-info-action@main
-      - name: "Validate Java Version"
-        run: |
-          echo "java_version [${{ steps.read_java.outputs.java_version }}]"
-          if [ "${{ steps.read_java.outputs.java_version }}" != "17" ]; then echo "Unexpected Java Version [${{ steps.read_java.outputs.java_version }}] should have been 17"; exit 1; fi
-      - name: "Detect version change"
-        id: "git"
-        run: |
-          git fetch --all --tags
-          sha_latest=$(git rev-parse HEAD)
-          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.1")
-          sha_latest_tag=$(git rev-list -n 1 $latest_tag 2>/dev/null || echo "")
-          
-          echo "sha_latest [$sha_latest]"
-          echo "sha_latest_tag [$sha_latest_tag]"
-          echo "latest_tag [$latest_tag]"
-          
-          semver=${semver:-$(if [ "$sha_latest" != "$sha_latest_tag" ]; then echo "${{ steps.inputs.outputs.semver_strategy }}"; else echo ""; fi)}
-          echo "semver [$semver]"
-          
-          echo "semver=$semver" >> $GITHUB_OUTPUT
-          echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
       - name: "Setup Python"
-        if: steps.git.outputs.semver != ''
+        if: steps.git_info.outputs.has_changes == 'true' || steps.git_info.outputs.has_local_changes == 'true'
         uses: actions/setup-python@main
         with:
           python-version: '3.x'
       - name: "Set Version"
         id: "semver"
-        if: steps.git.outputs.semver != ''
+        if: steps.git_info.outputs.has_changes == 'true' || steps.git_info.outputs.has_local_changes == 'true'
         run: |
           mkdir -p target
           wget -nc -nv https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/python/functions/semver.py -P target
           chmod +x target/semver.py
           
-          
-          new_version=$(target/semver.py --version=${{ steps.git.outputs.latest_tag }} --increase=${{ steps.git.outputs.semver }} --output=result)
+          new_version=$(target/semver.py --version=${{ steps.git.outputs.tag_latest }} --increase=${{ steps.inputs.outputs.semver_strategy }} --output=result)
           echo "new_version [$new_version]"
           
           [[ "${new_version}" == \"*\" || "${new_version}" == \'*\' ]] && new_version="${new_version:1:-1}"
@@ -121,7 +96,7 @@ jobs:
           rm -rf target/semver.py
           echo "new_version=$new_version" >> $GITHUB_OUTPUT
       - name: "Push changes"
-        if: steps.git.outputs.semver != ''
+        if: steps.git_info.outputs.has_changes == 'true' || steps.git_info.outputs.has_local_changes == 'true'
         uses: stefanzweifel/git-auto-commit-action@master
         with:
           commit_message: "chore: 🏷️ new version [${{ steps.semver.outputs.new_version }}]"
