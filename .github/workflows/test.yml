@@ -1,0 +1,52 @@
+name: "TEST"
+
+on:
+  workflow_dispatch:
+  push:
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - name: "Validate Input"
+        id: "inputs"
+        run: |
+          if [ "$GITHUB_ACTOR" != "YunaBraska" ]; then echo "Permission denied for user [$GITHUB_ACTOR]"; exit 1; fi
+          has_publish_to_code_climate=$(if [[ "${{secrets.CC_TEST_REPORTER_ID}}" == "" ]]; then echo "false"; else echo "true"; fi)
+          echo "has_publish_to_code_climate [$has_publish_to_code_climate]"
+          echo "has_publish_to_code_climate=$has_publish_to_code_climate" >> $GITHUB_OUTPUT
+          echo "--------------------- ENVS ---------------------"
+          env
+      - name: "Checkout"
+        uses: actions/checkout@main
+      - name: "Setup Node"
+        uses: actions/setup-node@main
+        with:
+          node-version: "16"
+          cache: npm
+      - name: "update dependencies"
+        run: |
+          npm outdated || true 
+          npm update --save
+          npm audit fix --force
+      - name: "Run Tests"
+        run: |
+          npm ci && npm run test:coverage
+      - name: "Get Java Version"
+        id: "read_java"
+        uses: YunaBraska/git-info-action@main
+        with:
+          work-dir: '.'
+          deep: '-1'
+          jv-fallback: 8
+          pv-fallback: '0.0.1'
+      - name: "Validate Java Version"
+        run: |
+          echo "java_version [${{ steps.read_java.outputs.java_version }}]"
+          echo "project_version [${{ steps.read_java.outputs.project_version }}]"
+          if [ "${{ steps.read_java.outputs.java_version }}" != "17" ]; then echo "Unexpected Java Version [${{ steps.read_java.outputs.java_version }}] should have been 17"; exit 1; fi

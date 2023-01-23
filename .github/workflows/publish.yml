@@ -1,0 +1,147 @@
+name: "RELEASE"
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        type: string
+        description: "[ref] e.g. branch, tag or commit to checkout [default: github.ref_name || github.head_ref ]"
+        required: false
+      semver_strategy:
+        type: string
+        description: "[semver_strategy] e.g. major,minor,patch,rc,meta [default: patch]"
+        required: false
+  schedule:
+    - cron: "0 8 * * *"
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    # Map the job outputs to step outputs
+    outputs:
+      semver: ${{ steps.git.outputs.semver }}
+      new_version: ${{ steps.semver.outputs.new_version }}
+    steps:
+      - name: "Validate Input"
+        id: "inputs"
+        run: |
+          if [ "$GITHUB_ACTOR" != "YunaBraska" ]; then echo "Permission denied for user [$GITHUB_ACTOR]"; exit 1; fi
+
+          ref_default=${{ github.ref_name || github.head_ref }}
+          ref="${ref_A:-${ref_B:-${ref_C:-${ref_default}}}}"
+          semver_strategy="${semver_strategy_A:-${semver_strategy_B:-${semver_strategy_C:-patch}}}"
+          has_publish_to_code_climate=$(if [[ "${{secrets.CC_TEST_REPORTER_ID}}" == "" ]]; then echo "false"; else echo "true"; fi)
+
+          echo "semver_strategy [$semver_strategy]"
+          echo "has_publish_to_code_climate [$has_publish_to_code_climate]"
+
+          echo "ref=$ref" >> $GITHUB_OUTPUT
+          echo "semver_strategy=$semver_strategy" >> $GITHUB_OUTPUT
+          echo "has_publish_to_code_climate=$has_publish_to_code_climate" >> $GITHUB_OUTPUT
+          echo "--------------------- ENVS ---------------------"
+          env
+        env:
+          ref_A: ${{ inputs.ref }}
+          ref_B: ${{ github.event.inputs.ref }}
+          ref_C: ${{ github.event.client_payload.ref }}
+          semver_strategy_A: ${{ inputs.semver_strategy }}
+          semver_strategy_B: ${{ github.event.inputs.semver_strategy }}
+          semver_strategy_C: ${{ github.event.client_payload.semver_strategy }}
+      - name: "Checkout"
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 500
+          ref: ${{ steps.inputs.outputs.ref }}
+      - name: "Setup Node"
+        uses: actions/setup-node@main
+        with:
+          node-version: "16"
+          cache: npm
+      - name: "update dependencies"
+        run: |
+          npm outdated || true
+          npm update --save
+          npm audit fix --force
+      - name: "Run Tests"
+        run: |
+          npm ci && npm run test:coverage
+      - name: "Publish code quality"
+        uses: paambaati/codeclimate-action@v3.2.0
+        if: steps.inputs.outputs.has_publish_to_code_climate == 'true'
+        env:
+          CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
+        with:
+          coverageLocations: ${{github.workspace}}/coverage/*.lcov:lcov
+      - name: "Get Java Version"
+        id: "read_java"
+        uses: YunaBraska/git-info-action@main
+      - name: "Validate Java Version"
+        run: |
+          echo "java_version [${{ steps.read_java.outputs.java_version }}]"
+          if [ "${{ steps.read_java.outputs.java_version }}" != "17" ]; then echo "Unexpected Java Version [${{ steps.read_java.outputs.java_version }}] should have been 17"; exit 1; fi
+      - name: "Detect version change"
+        id: "git"
+        run: |
+          git fetch --all --tags
+          sha_latest=$(git rev-parse HEAD)
+          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.1")
+          sha_latest_tag=$(git rev-list -n 1 $latest_tag 2>/dev/null || echo "")
+          
+          echo "sha_latest [$sha_latest]"
+          echo "sha_latest_tag [$sha_latest_tag]"
+          echo "latest_tag [$latest_tag]"
+          
+          semver=${semver:-$(if [ "$sha_latest" != "$sha_latest_tag" ]; then echo "${{ steps.inputs.outputs.semver_strategy }}"; else echo ""; fi)}
+          echo "semver [$semver]"
+          
+          echo "semver=$semver" >> $GITHUB_OUTPUT
+          echo "latest_tag=$latest_tag" >> $GITHUB_OUTPUT
+      - name: "Setup Python"
+        if: steps.git.outputs.semver != ''
+        uses: actions/setup-python@main
+        with:
+          python-version: '3.x'
+      - name: "Set Version"
+        id: "semver"
+        if: steps.git.outputs.semver != ''
+        run: |
+          mkdir -p target
+          wget -nc -nv https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/python/functions/semver.py -P target
+          chmod +x target/semver.py
+          
+          
+          new_version=$(target/semver.py --version=${{ steps.git.outputs.latest_tag }} --increase=${{ steps.git.outputs.semver }} --output=result)
+          echo "new_version [$new_version]"
+          
+          [[ "${new_version}" == \"*\" || "${new_version}" == \'*\' ]] && new_version="${new_version:1:-1}"
+          version_file=$(find . -name "version.txt" -type f)
+          version_file=${version_file:-version.txt}
+          echo "$new_version" > $version_file
+          
+          rm -rf target/semver.py
+          echo "new_version=$new_version" >> $GITHUB_OUTPUT
+      - name: "Push changes"
+        if: steps.git.outputs.semver != ''
+        uses: stefanzweifel/git-auto-commit-action@master
+        with:
+          commit_message: "chore: 🏷️ new version [${{ steps.semver.outputs.new_version }}]"
+          commit_user_name: "Kira"
+          commit_user_email: "kira@yuna.berlin"
+          commit_author: "Kira <kira@yuna.berlin>"
+          tagging_message: ${{ steps.semver.outputs.new_version }}
+          skip_dirty_check: true
+          skip_fetch: true
+          skip_checkout: true
+          disable_globbing: true
+          create_branch: false
+  tag_outputs:
+    needs: "tag"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "print"
+        run: |
+          echo "-------------------- OUTPUTS --------------------"
+          echo "semver                    [${{needs.tag.outputs.semver}}]"
+          echo "new_version               [${{needs.tag.outputs.new_version}}]"
+          echo "--------------------- ENVS ---------------------"
+          env

@@ -1,0 +1,52 @@
+name: 'Java Info Action'
+description: 'Detects the Java Version of Gradle and Maven'
+inputs:
+  deep:
+    description: 'folder scan deep (-1 == endless)'
+    required: false
+    default: '-1'
+  work-dir:
+    description: 'folder scan ("." == current)'
+    required: false
+    default: '.'
+  jv-fallback:
+    description: 'java version fallback if no java version was found'
+    required: false
+    default: '17'
+  pv-fallback:
+    description: 'project version fallback if no project version was found'
+    required: false
+    default: 'null'
+outputs:
+  java_version:
+    description: 'java version - parsed from build files'
+  has_wrapper:
+    description: 'if a wrapper exists - e.g. gradlew, mvnw,...'
+  is_gradle:
+    description: 'true if a gradle build was found'
+  is_maven:
+    description: 'true if a maven build was found'
+  cmd:
+    description: 'build command e.g. gradle, gradlew, gradle.bat, mvn, mvnw, mvn.bat'
+  cmd_test:
+    description: 'build command e.g. gradle, gradlew, gradle.bat, mvn, mvnw, mvn.bat'
+  cmd_build:
+    description: 'test command e.g. gradle clean build -x test / maven clean package -DskipTests'
+  cmd_test_build:
+    description: 'test command e.g. gradle clean build / maven clean package'
+  cmd_update_deps:
+    description: 'test command e.g. gradle check / maven versions:use-latest-versions -B -q -DgenerateBackupPoms=false'
+  cmd_update_plugs:
+    description: 'test command e.g. gradle check / maven versions:use-latest-versions -B -q -DgenerateBackupPoms=false'
+  cmd_update_props:
+    description: 'test command e.g. gradle check / maven versions:update-properties -B -q -DgenerateBackupPoms=false'
+  cmd_update_parent:
+    description: 'test command e.g. gradle check / maven versions:update-parent -B -q -DgenerateBackupPoms=false'
+  cmd_update_wrapper:
+    description: 'test command e.g. gradle gradle wrapper --gradle-version 7.5.1 / maven -B -q -N io.takari:maven:wrapper'
+runs:
+  using: 'node16'
+  main: 'lib/index.js'
+branding:
+  icon: file-text
+  color: purple
