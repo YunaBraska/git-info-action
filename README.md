@@ -56,21 +56,21 @@ Reads git information
 
 ### Outputs
 
-| Name                       | default | description                                                    |
-|----------------------------|---------|----------------------------------------------------------------|
-| branch                     | main    | current branch                                                 |
-| branch_default             | main    | default branch                                                 |
-| commits_ahead              | 0       | branch commits that are not in the branch_default              |
-| commits_behind             | 0       | branch_default commits that are not in the branch              |
-| is_default_branch          | false   | true if branch == branch_default                               |
-| has_changes                | false   | true if sha_latest != sha_latest_tag                           |
-| has_local_changes          | false   | true if there are changes on non committed files               |
-| sha_latest                 | null    | sha from latest commit                                         |
-| sha_latest_tag             | null    | sha from latest tag                                            |
-| tag_latest                 | 0.0.1   | latest tag                                                     |
-| x_has_changes_<lang>       | false   | true on file changes exists between current sha and latest tag |
-| x_has_local_changes_<lang> | false   | true on non committed files                                    |
-| x_language_list            | -       | a list of supported language for x_has_changes_<lang>          |
+| Name                        | default | description                                                                               |
+|-----------------------------|---------|-------------------------------------------------------------------------------------------|
+| branch                      | main    | current branch                                                                            |
+| branch_default              | main    | default branch                                                                            |
+| commits_ahead               | 0       | branch commits that are not in the branch_default                                         |
+| commits_behind              | 0       | branch_default commits that are not in the branch                                         |
+| is_default_branch           | false   | true if `branch` == `branch_default`                                                      |
+| has_changes                 | false   | true if `sha_latest` != `sha_latest_tag`                                                  |
+| has_local_changes           | false   | true if there are changes on non committed files                                          |
+| sha_latest                  | null    | sha from latest commit                                                                    |
+| sha_latest_tag              | null    | sha from latest tag                                                                       |
+| tag_latest                  | 0.0.1   | latest tag                                                                                |
+| x_has_changes_\<lang>       | false   | true on file changes exists between current sha and latest tag                            |
+| x_has_local_changes_\<lang> | false   | true if there are changes on non committed files for the specific language                |
+| x_language_list             | -       | a list of supported languages for `x_has_changes_<lang>` and `x_has_local_changes_<lang>` |
 
 ### \[DEV] Setup Environment
 
@@ -85,7 +85,7 @@ Reads git information
 
 [build_shield]: https://github.com/YunaBraska/git-info-action/workflows/RELEASE/badge.svg
 
-[build_link]: https://github.com/YunaBraska/git-info-action/actions?query=workflow%3AMVN_RELEASE
+[build_link]: https://github.com/YunaBraska/git-info-action/actions/workflows/publish.yml/badge.svg
 
 [maintainable_shield]: https://img.shields.io/codeclimate/maintainability/YunaBraska/git-info-action?style=flat-square
 

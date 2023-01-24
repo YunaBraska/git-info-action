@@ -35,6 +35,10 @@ jobs:
           semver_strategy="${semver_strategy_A:-${semver_strategy_B:-${semver_strategy_C:-patch}}}"
           echo "semver_strategy [$semver_strategy]"
           echo "semver_strategy=$semver_strategy" >> $GITHUB_OUTPUT
+          echo "--------------------- CODE CLIMATE -------------"
+          has_publish_to_code_climate=$(if [[ "${{secrets.CC_TEST_REPORTER_ID}}" == "" ]]; then echo "false"; else echo "true"; fi)
+          echo "has_publish_to_code_climate [$has_publish_to_code_climate]"
+          echo "has_publish_to_code_climate=$has_publish_to_code_climate" >> $GITHUB_OUTPUT
           echo "--------------------- ENVS ---------------------"
           env
         env:
@@ -49,6 +53,7 @@ jobs:
         with:
           fetch-depth: 500
           ref: ${{ steps.inputs.outputs.ref }}
+          token: ${{ secrets.CI || secrets.CI_TOKEN_WORKFLOW || github.token }}
       - name: "Setup Node"
         uses: actions/setup-node@main
         with:
@@ -81,11 +86,19 @@ jobs:
         id: "semver"
         if: steps.git_info.outputs.has_changes == 'true' || steps.git_info.outputs.has_local_changes == 'true'
         run: |
+          echo ""
+          echo "has_changes [${{ steps.git_info.outputs.has_changes }}]"
+          echo "has_local_changes [${{ steps.git_info.outputs.has_local_changes }}]"
+          echo "tag_latest [${{ steps.git_info.outputs.tag_latest }}]"
+          echo "semver_strategy [${{ steps.inputs.outputs.semver_strategy }}]"
+          echo "pwd $(pwd)"
           mkdir -p target
-          wget -nc -nv https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/python/functions/semver.py -P target
-          chmod +x target/semver.py
+          wget -nc -nv https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/python/functions/semver.py -P target || true
+          chmod +x target/semver.py || true
+          echo "ls $(ls -lah target)"
           
-          new_version=$(target/semver.py --version=${{ steps.git.outputs.tag_latest }} --increase=${{ steps.inputs.outputs.semver_strategy }} --output=result)
+          echo "target/semver.py --version=${{ steps.git_info.outputs.tag_latest }} --increase=${{ steps.inputs.outputs.semver_strategy }} --output=result"
+          new_version=$(target/semver.py --version=${{ steps.git_info.outputs.tag_latest }} --increase=${{ steps.inputs.outputs.semver_strategy }} --output=result)
           echo "new_version [$new_version]"
           
           [[ "${new_version}" == \"*\" || "${new_version}" == \'*\' ]] && new_version="${new_version:1:-1}"
