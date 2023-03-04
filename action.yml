@@ -17,6 +17,18 @@ inputs:
     description: 'fallback if no tag could be found'
     required: false
     default: 'null'
+  fallback-commit-type:
+    description: 'fallback for commits without type (Conventional Commits)'
+    required: false
+    default: ''
+  fallback-commit-scope:
+    description: 'fallback for commits without scope (Conventional Commits)'
+    required: false
+    default: ''
+  commit-msg-with-footer:
+    description: 'include footer from commit messages (Conventional Commits)'
+    required: false
+    default: 'true'
 outputs:
   branch:
     description: 'current branch'
@@ -32,12 +44,20 @@ outputs:
     description: 'true if sha_latest != sha_latest_tag'
   has_local_changes:
     description: 'true if there are changes on non committed files'
+  has_breaking_changes:
+    description: 'true if a commit has a breaking change (Conventional Commits)'
   sha_latest:
     description: 'sha from latest commit'
   sha_latest_tag:
     description: 'sha from latest tag'
   tag_latest:
     description: 'latest tag'
+  ticket_numbers:
+    description: 'list of ticket numbers (Jira  GitHub)'
+  commit_types:
+    description: 'list of commit types (Conventional Commits)'
+  commit_scopes:
+    description: 'list of commit scopes (Conventional Commits)'
   x_language_list:
     description: 'a list of supported language for x_has_changes_<lang>'
 runs:
