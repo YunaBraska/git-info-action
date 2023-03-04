@@ -144,8 +144,8 @@ test('Test with file [howdy.java] && commit', () => {
 
 test('Test with file [howdy.java] && branch && default branch [init] && commit', () => {
     setupGit(workDir)
-    main.cmdLog(workDir, 'git branch -m main')
-    main.cmdLog(workDir, 'git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main')
+    main.cmd(workDir, 'git branch -m main')
+    main.cmd(workDir, 'git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main')
     commitFile("main.file", `init commit main`);
 
     main.cmdLog(workDir, 'git checkout -b add_file')
@@ -306,6 +306,7 @@ function setupGit(workDir: PathOrFileDescriptor) {
     main.cmd("git config init.defaultBranch main");
     main.cmd("git config --global init.defaultBranch main");
     main.cmd(workDir, 'git init')
+    main.cmd(workDir, 'git checkout -b main')
     main.cmd(workDir, 'git config --file .git/config user.email "kira@yuna.berlin"')
     main.cmd(workDir, 'git config --file .git/config user.name "Kira"')
     console.log('is_git_repo' + main.cmd(workDir, 'git rev-parse --is-inside-work-tree', 'git rev-parse --git-dir'))
