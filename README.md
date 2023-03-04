@@ -79,11 +79,11 @@ Reads git information with conventional commit support and ticket number detecti
 | sha_latest                  | null    | sha from latest commit                                                                    |
 | sha_latest_tag              | null    | sha from latest tag                                                                       |
 | tag_latest                  | 0.0.1   | latest tag                                                                                |
-| commit_type_\<type>         | ""      | list of commit messages for the given commit type (Conventional Commits)                  |
 | ticket_numbers              | ""      | list of ticket numbers (Jira  GitHub)                                                     |
 | commit_types                | ""      | list of types (Conventional Commits)                                                      |
 | commit_scopes               | ""      | list of scopes (Conventional Commits)                                                     |
-| commit_scope_\<scope>       | ""      | list of commit messages for the given commit type (Conventional Commits)                  |
+| commit_type_\<type>         | ""      | list of commit messages for the given commit type (Conventional Commits)                  |
+| commit_scope_\<scope>       | ""      | list of commit messages for the given commit scope (Conventional Commits)                 |
 | x_has_changes_\<lang>       | false   | true on file changes exists between current sha and latest tag                            |
 | x_has_local_changes_\<lang> | false   | true if there are changes on non committed files for the specific language                |
 | x_language_list             | -       | a list of supported languages for `x_has_changes_<lang>` and `x_has_local_changes_<lang>` |
