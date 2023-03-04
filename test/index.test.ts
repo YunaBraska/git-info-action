@@ -10,7 +10,6 @@ let workDir: PathOrFileDescriptor;
 
 beforeEach(() => {
     workDir = path.join(os.tmpdir(), 'git_info_action_test');
-    main.cmd("git config --global init.defaultBranch main");
     removeDir(workDir);
     fs.mkdirSync(workDir);
 });
@@ -304,6 +303,8 @@ function commitFile(name: string, message : string) {
 }
 
 function setupGit(workDir: PathOrFileDescriptor) {
+    main.cmd("git config init.defaultBranch main");
+    main.cmd("git config --global init.defaultBranch main");
     main.cmd(workDir, 'git init')
     main.cmd(workDir, 'git config --file .git/config user.email "kira@yuna.berlin"')
     main.cmd(workDir, 'git config --file .git/config user.name "Kira"')
