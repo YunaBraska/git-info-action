@@ -50,4 +50,8 @@ jobs:
           echo "branch_default       [${{ steps.git_info.outputs.branch_default }}]"
           echo "has_changes          [${{ steps.git_info.outputs.has_changes }}]"
           echo "has_local_changes    [${{ steps.git_info.outputs.has_local_changes }}]"
+          echo "has_breaking_changes [${{ steps.git_info.outputs.has_breaking_changes }}]"
+          echo "commit_types         [${{ steps.git_info.outputs.commit_types }}]"
+          echo "commit_scopes        [${{ steps.git_info.outputs.commit_scopes }}]"
+          echo "ticket_numbers       [${{ steps.git_info.outputs.ticket_numbers }}]"
           echo "x_has_changes_python [${{ steps.git_info.outputs.x_has_changes_python }}]"

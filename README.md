@@ -1,6 +1,6 @@
 # git-info-action
 
-Reads git information
+Reads git information with conventional commit support and ticket number detection
 
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=HFHFUT3G6TZF6)
 
@@ -29,6 +29,9 @@ Reads git information
     ignore-files: '.java, .groovy, .jar'
     branch-fallback: 'main'
     tag-fallback: '0.0.1'
+    fallback-commit-type: 'chore'
+    fallback-commit-scope: 'performance'
+    commit-msg-with-footer: 'true'
 
   # PRINT
 - name: "Print Git Info"
@@ -41,18 +44,25 @@ Reads git information
     echo "branch_default       [${{ steps.git_info.outputs.branch_default }}]"
     echo "has_changes          [${{ steps.git_info.outputs.has_changes }}]"
     echo "has_local_changes    [${{ steps.git_info.outputs.has_local_changes }}]"
+    echo "has_breaking_changes [${{ steps.git_info.outputs.has_breaking_changes }}]"
+    echo "commit_types         [${{ steps.git_info.outputs.commit_types }}]"
+    echo "commit_scopes        [${{ steps.git_info.outputs.commit_scopes }}]"
+    echo "ticket_numbers       [${{ steps.git_info.outputs.ticket_numbers }}]"
     echo "x_has_changes_python [${{ steps.git_info.outputs.x_has_changes_python }}]"
 
 ```
 
 ### Inputs
 
-| parameter       | default | description                                                            |
-|-----------------|---------|------------------------------------------------------------------------|
-| work-dir        | '.'     | work dir                                                               |
-| ignore-files    | null    | regex list to ignore files (comma separated) e.g. '/\.txt$/, /\.doc$/' |
-| branch-fallback | 'main'  | fallback if no branch_default could be found                           |
-| tag-fallback    | null    | fallback if no tag could be found                                      |
+| parameter              | default | description                                                            |
+|------------------------|---------|------------------------------------------------------------------------|
+| work-dir               | '.'     | work dir                                                               |
+| ignore-files           | null    | regex list to ignore files (comma separated) e.g. '/\.txt$/, /\.doc$/' |
+| branch-fallback        | 'main'  | fallback if no branch_default could be found                           |
+| tag-fallback           | null    | fallback if no tag could be found                                      |
+| fallback-commit-type   | ''      | fallback for commits without type (Conventional Commits)               |
+| fallback-commit-scope  | ''      | fallback for commits without scope (Conventional Commits)              |
+| commit-msg-with-footer | true    | include footer from commit messages (Conventional Commits)             |
 
 ### Outputs
 
@@ -65,9 +75,15 @@ Reads git information
 | is_default_branch           | false   | true if `branch` == `branch_default`                                                      |
 | has_changes                 | false   | true if `sha_latest` != `sha_latest_tag`                                                  |
 | has_local_changes           | false   | true if there are changes on non committed files                                          |
+| has_breaking_changes        | false   | true if a commit has a breaking change (Conventional Commits)                             |
 | sha_latest                  | null    | sha from latest commit                                                                    |
 | sha_latest_tag              | null    | sha from latest tag                                                                       |
 | tag_latest                  | 0.0.1   | latest tag                                                                                |
+| commit_type_\<type>         | ""      | list of commit messages for the given commit type (Conventional Commits)                  |
+| ticket_numbers              | ""      | list of ticket numbers (Jira  GitHub)                                                     |
+| commit_types                | ""      | list of types (Conventional Commits)                                                      |
+| commit_scopes               | ""      | list of scopes (Conventional Commits)                                                     |
+| commit_scope_\<scope>       | ""      | list of commit messages for the given commit type (Conventional Commits)                  |
 | x_has_changes_\<lang>       | false   | true on file changes exists between current sha and latest tag                            |
 | x_has_local_changes_\<lang> | false   | true if there are changes on non committed files for the specific language                |
 | x_language_list             | -       | a list of supported languages for `x_has_changes_<lang>` and `x_has_local_changes_<lang>` |
@@ -79,9 +95,6 @@ Reads git information
 * Run `npm run build` to "compile" `index.ts` to `./lib/index.js`
 * NodeJs 16: do not upgrade nodeJs as GitHub actions latest version is 16
 * Hint: please do not remove the node modules as they are required for custom GitHub actions :(
-
-### TODOs
-* [ ] read semver strategy from semantic commits
 
 [build_shield]: https://github.com/YunaBraska/git-info-action/workflows/RELEASE/badge.svg
 
