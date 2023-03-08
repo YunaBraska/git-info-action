@@ -3,6 +3,7 @@ name: "TEST"
 on:
   workflow_dispatch:
   push:
+    tags-ignore:
     paths-ignore:
       - '**.md'
 

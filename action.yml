@@ -1,5 +1,5 @@
 name: 'Git Info Action'
-description: 'Instant insights into the latest changes and commits. Provides valuable outputs such as ticket number detection, breaking changes, latest branch & commit & tag information, variety of programming languages and conventions.'
+description: 'Git insights such as latest branch & commit & tag information, ticket number detection, breaking changes...'
 inputs:
   work-dir:
     description: 'work dir'
