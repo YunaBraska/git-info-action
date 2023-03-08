@@ -1,6 +1,8 @@
 # git-info-action
 
-Reads git information with conventional commit support and ticket number detection
+Instant insights into the latest changes and commits.
+Provides valuable outputs such as ticket number detection, breaking changes, latest branch & commit & tag information,
+variety of programming languages and conventions.
 
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/donate/?hosted_button_id=HFHFUT3G6TZF6)
 
