@@ -92,9 +92,9 @@ variety of programming languages and conventions.
 
 ### \[DEV] Setup Environment
 
-* setup or clean environment `./clean_node.sh`
-* Run `npm run test:coverage` to run all tests
-* Run `npm run build` to "compile" `index.ts` to `./lib/index.js`
+* clean environment: `./clean_node.sh`
+* Build: `npm run build` to "compile" `index.ts` to `./lib/index.js`
+* Test: `npm run build && npm run test:coverage`
 * NodeJs 16: do not upgrade nodeJs as GitHub actions latest version is 16
 * Hint: please do not remove the node modules as they are required for custom GitHub actions :(
 
