@@ -51,7 +51,7 @@ try {
     let commitMsgWithFooter = core.getInput('commit-msg-with-footer');
     let workspace = process.env['GITHUB_WORKSPACE']?.toString() || null;
     if (!workDir || workDir === ".") {
-        workDir = getWorkingDirectory(workspace)
+        workDir = getWorkingDirectory(workspace);
     }
     let ignoreFiles = isEmpty(ignoreFilesStr) ? new Set<string>() : ignoreFilesStr.split(',');
     let result = run(
@@ -65,11 +65,11 @@ try {
     );
     result.set('GITHUB_WORKSPACE', workspace || null);
 
-    console.log(JSON.stringify(Object.fromEntries(sortMap(result)), null, 4))
+    console.log(JSON.stringify(Object.fromEntries(sortMap(result)), null, 4));
 
     result.forEach((value, key) => {
         core.setOutput(key, value);
-    })
+    });
 } catch (e) {
     if (typeof e === "string") {
         core.setFailed(e.toUpperCase());
@@ -113,7 +113,7 @@ function run(
     result = setLatestTag(workDir, result, tagFallback);
     result.set('has_changes', result.get('sha_latest') !== result.get('sha_latest_tag'));
 
-    let changedFiles = toFilesSet(ignoreFiles, cmd(workDir, 'git diff ' + result.get('sha_latest') + ' ' + result.get('sha_latest_tag') + ' --name-only'))
+    let changedFiles = toFilesSet(ignoreFiles, cmd(workDir, 'git diff ' + result.get('sha_latest') + ' ' + result.get('sha_latest_tag') + ' --name-only'));
     let changedLocalFiles = toFilesSet(ignoreFiles, gitStatus);
     result.set('has_local_changes', changedLocalFiles && changedLocalFiles.size > 0);
     fileEndingsMap.forEach((fileEndings, language) => {
@@ -126,15 +126,15 @@ function run(
     languages.sort();
     result.set('x_language_list', languages.join(', '));
 
-    let aheadBehind = cmd(workDir, 'git rev-list --count --left-right ' + result.get('branch') + '...' + result.get('branch_default'))
-    let ahead = isEmpty(aheadBehind) ? null : aheadBehind?.split(/\s/)[0].trim()
-    let behind = isEmpty(aheadBehind) ? null : aheadBehind?.split(/\s/)[1].trim()
+    let aheadBehind = cmd(workDir, 'git rev-list --count --left-right ' + result.get('branch') + '...' + result.get('branch_default'));
+    let ahead = isEmpty(aheadBehind) ? null : aheadBehind?.split(/\s/)[0].trim();
+    let behind = isEmpty(aheadBehind) ? null : aheadBehind?.split(/\s/)[1].trim();
     result.set('commits_ahead', parseInt(ahead || '0'));
     result.set('commits_behind', parseInt(behind || '0'));
 
     if (result.get("has_changes")) {
         let commits = toCommitMessages(cmd(workDir, 'git log ' + result.get('sha_latest_tag') + '..' + result.get('sha_latest')))
-            .map(commit => toSemanticCommit(commit[3], fallbackCommitType, fallbackCommitScope, commitMsgWithFooter))
+            .map(commit => toSemanticCommit(commit[3], fallbackCommitType, fallbackCommitScope, commitMsgWithFooter));
         result.set("ticket_numbers", getTicketNumbers(commits).join(', '));
         result.set("has_breaking_changes", commits.some(([_, __, breakingChange]) => !isEmpty(breakingChange) ? breakingChange.toLowerCase() === 'true' : false));
 
@@ -151,15 +151,15 @@ function run(
                 message.push(commit[3]);
                 scopeMap.set(commit[1], message);
             }
-        })
+        });
         result.set("commit_types", Array.from(sortMap(typeMap).keys()).join(', '));
         result.set("commit_scopes", Array.from(sortMap(scopeMap).keys()).join(', '));
         typeMap.forEach((value, key) => {
             result.set("commit_type_" + key, value.join(`. ${LINE_SEPARATOR}`));
-        })
+        });
         scopeMap.forEach((value, key) => {
             result.set("commit_scope_" + key, value.join(`. ${LINE_SEPARATOR}`));
-        })
+        });
     }
     return result;
 }
@@ -168,8 +168,8 @@ function run(
 function getTicketNumbers(commits: string[][]): string[] {
     let tickets: string[] = [];
     commits.forEach(commit => {
-        commit[3]?.match(TICKET_PATTERN)?.forEach(ticket => tickets.push(ticket.trim()))
-    })
+        commit[3]?.match(TICKET_PATTERN)?.forEach(ticket => tickets.push(ticket.trim()));
+    });
     return tickets;
 }
 
@@ -182,7 +182,7 @@ function toCommitMessages(messages: string | null): string[][] {
     str(messages).split(/\r?\n|\r/).forEach(line => {
         if (line.startsWith('commit ')) {
             if (!isEmpty(commit)) {
-                result.push([commit, author, date, msg])
+                result.push([commit, author, date, msg]);
                 msg = ""
             }
             commit = line.substring('commit '.length);
@@ -196,7 +196,7 @@ function toCommitMessages(messages: string | null): string[][] {
         console.log(line);
     });
     if (!isEmpty(commit)) {
-        result.push([commit, author, date, msg.trim()])
+        result.push([commit, author, date, msg.trim()]);
     }
     return result;
 }
@@ -231,7 +231,7 @@ function toFilesSet(ignoreFiles: Set<string>, changesLog: string | null): Set<st
     }
     for (const line of changesLog.split(/\r?\n|\r/)) {
         if (!isEmpty(line) && line.includes('.')) {
-            result.add(line.trim())
+            result.add(line.trim());
         }
     }
     return ignoreFiles && ignoreFiles.size > 0
@@ -296,7 +296,7 @@ function execCmd(workDir: PathOrFileDescriptor, logError: boolean, commands: str
             });
         } catch (error) {
             if (logError) {
-                console.debug(error)
+                console.debug(error);
             }
             continue;
         }

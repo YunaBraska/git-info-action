@@ -20,7 +20,7 @@ jobs:
     # Map the job outputs to step outputs
     outputs:
       semver: ${{ steps.git.outputs.semver }}
-      new_version: ${{ steps.semver.outputs.new_version }}
+      new_version: ${{ steps.semver_info.outputs.clean_semver }}
     steps:
       - name: "Read Input"
         id: "inputs"
@@ -77,46 +77,26 @@ jobs:
       - name: "Read Git Info"
         id: "git_info"
         uses: YunaBraska/git-info-action@main
-      - name: "Setup Python"
-        if: steps.git_info.outputs.has_changes == 'true' || steps.git_info.outputs.has_local_changes == 'true'
-        uses: actions/setup-python@main
+      - name: "Get Semver Info"
+        id: "semver_info"
+        uses: YunaBraska/semver-info-action@main
         with:
-          python-version: '3.x'
-      - name: "Set Version"
-        id: "semver"
-        if: steps.git_info.outputs.has_changes == 'true' || steps.git_info.outputs.has_local_changes == 'true'
+          semver-a: ${{ steps.git_info.outputs.tag_latest }}
+          increase-a: ${{ steps.inputs.outputs.semver_strategy }}
+      - name: "Write Version.txt"
+        if: steps.semver_info.outputs.version_txt_path != '' || steps.semver_info.outputs.version_txt_path == 'null'
         run: |
-          echo ""
-          echo "has_changes [${{ steps.git_info.outputs.has_changes }}]"
-          echo "has_local_changes [${{ steps.git_info.outputs.has_local_changes }}]"
-          echo "tag_latest [${{ steps.git_info.outputs.tag_latest }}]"
-          echo "semver_strategy [${{ steps.inputs.outputs.semver_strategy }}]"
-          echo "pwd $(pwd)"
-          mkdir -p target
-          wget -nc -nv https://raw.githubusercontent.com/YunaBraska/YunaBraska/main/.github/scripts/python/functions/semver.py -P target || true
-          chmod +x target/semver.py || true
-          echo "ls $(ls -lah target)"
-          
-          echo "target/semver.py --version=${{ steps.git_info.outputs.tag_latest }} --increase=${{ steps.inputs.outputs.semver_strategy }} --output=result"
-          new_version=$(target/semver.py --version=${{ steps.git_info.outputs.tag_latest }} --increase=${{ steps.inputs.outputs.semver_strategy }} --output=result)
-          echo "new_version [$new_version]"
-          
-          [[ "${new_version}" == \"*\" || "${new_version}" == \'*\' ]] && new_version="${new_version:1:-1}"
-          version_file=$(find . -name "version.txt" -type f)
-          version_file=${version_file:-version.txt}
-          echo "$new_version" > $version_file
-          
-          rm -rf target/semver.py
-          echo "new_version=$new_version" >> $GITHUB_OUTPUT
+          echo "version [${{ steps.semver_info.outputs.clean_semver }}]"
+          echo "${{steps.semver_info.outputs.clean_semver}}" > "${{steps.semver_info.outputs.version_txt_path}}"
       - name: "Push changes"
         if: steps.git_info.outputs.has_changes == 'true' || steps.git_info.outputs.has_local_changes == 'true'
         uses: stefanzweifel/git-auto-commit-action@master
         with:
-          commit_message: "chore: 🏷️ new version [${{ steps.semver.outputs.new_version }}]"
+          commit_message: "chore: 🏷️ new version [${{ steps.semver_info.outputs.clean_semver }}]"
           commit_user_name: "Kira"
           commit_user_email: "kira@yuna.berlin"
           commit_author: "Kira <kira@yuna.berlin>"
-          tagging_message: ${{ steps.semver.outputs.new_version }}
+          tagging_message: ${{ steps.semver_info.outputs.clean_semver }}
           skip_dirty_check: true
           skip_fetch: true
           skip_checkout: true
