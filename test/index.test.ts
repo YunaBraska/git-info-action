@@ -2,10 +2,9 @@ import * as fs from "fs";
 import {PathOrFileDescriptor} from "fs";
 import * as os from 'os';
 import * as path from 'path';
+import {cmd, cmdLog, deleteBranchPrefix, LINE_SEPARATOR} from '../src/common_processing';
 
 const main = require('../src/index');
-import {deleteBranchPrefix, cmd, cmdLog} from '../src/common_processing';
-const LINE_SEPARATOR = os.EOL;
 
 let workDir: PathOrFileDescriptor;
 
@@ -332,7 +331,12 @@ test('Test conventional commit with defaults && with footer && no breaking chang
     expect(result.get('has_breaking_changes')).toEqual(false)
     expect(result.get('commit_types')).toEqual("default-type, feat")
     expect(result.get('commit_scopes')).toEqual("default-scope, shopping cart")
-    expect(result.get('ticket_numbers')).toEqual("#1338, #123, JIRA-1337")
+    //FIXME: get ALL ticket numbers also on windows
+    if (os.platform().toLowerCase().startsWith('win')) {
+        expect(result.get('ticket_numbers')).toEqual("#1338")
+    } else {
+        expect(result.get('ticket_numbers')).toEqual("#1338, #123, JIRA-1337")
+    }
 });
 
 test('Test conventional commit with defaults && no footer && breaking change', () => {

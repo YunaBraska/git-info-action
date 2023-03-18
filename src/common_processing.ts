@@ -6,6 +6,7 @@ export type ResultType = string | number | boolean | null;
 export const LINE_SEPARATOR = os.EOL;
 export const BC_PATTERN = /\Wbreaking\W?change\W/mgi;
 export const TICKET_PATTERN = /(\w*)-\d+|#\d+/mgi;
+export const LINE_SPLIT_REGEX = /\r?\n|\r/g;
 
 export function str(result: string | number | boolean | null | undefined): string {
     return (result ?? '').toString();
@@ -19,7 +20,9 @@ export function isEmpty(input: string | null | undefined): boolean {
 export function getTicketNumbers(commits: string[][]): string[] {
     let tickets: string[] = [];
     commits.forEach(commit => {
-        commit[3]?.match(TICKET_PATTERN)?.forEach(ticket => tickets.push(ticket.trim()));
+        commit[3]?.trim()?.split(LINE_SPLIT_REGEX)?.forEach(c =>
+            c.trim().match(TICKET_PATTERN)?.forEach(ticket => tickets.push(ticket.trim()))
+        );
     });
     return tickets;
 }
@@ -60,7 +63,7 @@ export function toCommitMessages(messages: string | null): string[][] {
     let author = ""
     let date = ""
     let msg = ""
-    str(messages).split(/\r?\n|\r/).forEach(line => {
+    str(messages).split(LINE_SPLIT_REGEX).forEach(line => {
         if (line.startsWith('commit ')) {
             if (!isEmpty(commit)) {
                 result.push([commit, author, date, msg]);
@@ -95,7 +98,7 @@ export function toSemanticCommit(message: string, fallbackCommitType: string, fa
     body = body + (body.endsWith('.') ? "" : ".");
     body = isEmpty(body) ? "" : body.charAt(0).toUpperCase() + body.slice(1);
     if (!commitMsgWithFooter && (body.includes('\n') || body.includes('\r'))) {
-        body = body.split(/\r?\n|\r/)[0]
+        body = body.split(LINE_SPLIT_REGEX)[0]
     }
     return [type, scope, str(breakingChange), body];
 }

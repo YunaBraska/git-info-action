@@ -2,9 +2,11 @@
 import {PathOrFileDescriptor} from "fs";
 import {
     cmd,
-    deleteBranchPrefix, getTicketNumbers,
+    deleteBranchPrefix,
+    getTicketNumbers,
     isEmpty,
     LINE_SEPARATOR,
+    LINE_SPLIT_REGEX,
     replaceNullWithEmptyMap,
     ResultType,
     sortMap,
@@ -194,7 +196,7 @@ function toFilesSet(ignoreFiles: Set<string>, changesLog: string | null): Set<st
     if (isEmpty(changesLog) || changesLog === null) {
         return result;
     }
-    for (const line of changesLog.split(/\r?\n|\r/)) {
+    for (const line of changesLog.split(LINE_SPLIT_REGEX)) {
         if (!isEmpty(line) && line.includes('.')) {
             result.add(line.trim());
         }
