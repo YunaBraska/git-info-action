@@ -58,37 +58,73 @@ variety of programming languages and conventions.
 
 | parameter              | default | description                                                            |
 |------------------------|---------|------------------------------------------------------------------------|
-| work-dir               | '.'     | work dir                                                               |
-| ignore-files           | null    | regex list to ignore files (comma separated) e.g. '/\.txt$/, /\.doc$/' |
-| branch-fallback        | 'main'  | fallback if no branch_default could be found                           |
-| tag-fallback           | null    | fallback if no tag could be found                                      |
-| fallback-commit-type   | ''      | fallback for commits without type (Conventional Commits)               |
-| fallback-commit-scope  | ''      | fallback for commits without scope (Conventional Commits)              |
-| commit-msg-with-footer | true    | include footer from commit messages (Conventional Commits)             |
+| work-dir               | '.'     | Work dir                                                               |
+| ignore-files           | null    | Regex list to ignore files (comma separated) e.g. '/\.txt$/, /\.doc$/' |
+| branch-fallback        | 'main'  | Fallback if no branch_default could be found                           |
+| tag-fallback           | null    | Fallback if no tag could be found                                      |
+| fallback-commit-type   | ''      | Fallback for commits without type (Conventional Commits)               |
+| fallback-commit-scope  | ''      | Fallback for commits without scope (Conventional Commits)              |
+| commit-msg-with-footer | true    | Include footer from commit messages (Conventional Commits)             |
+| null-to-empty          | true    | Replaces null values with empty strings                                |
 
 ### Outputs
 
-| Name                        | default | description                                                                               |
-|-----------------------------|---------|-------------------------------------------------------------------------------------------|
-| branch                      | main    | current branch                                                                            |
-| branch_default              | main    | default branch                                                                            |
-| commits_ahead               | 0       | branch commits that are not in the branch_default                                         |
-| commits_behind              | 0       | branch_default commits that are not in the branch                                         |
-| is_default_branch           | false   | true if `branch` == `branch_default`                                                      |
-| has_changes                 | false   | true if `sha_latest` != `sha_latest_tag`                                                  |
-| has_local_changes           | false   | true if there are changes on non committed files                                          |
-| has_breaking_changes        | false   | true if a commit has a breaking change (Conventional Commits)                             |
-| sha_latest                  | null    | sha from latest commit                                                                    |
-| sha_latest_tag              | null    | sha from latest tag                                                                       |
-| tag_latest                  | 0.0.1   | latest tag                                                                                |
-| ticket_numbers              | ""      | list of ticket numbers (Jira  GitHub)                                                     |
-| commit_types                | ""      | list of types (Conventional Commits)                                                      |
-| commit_scopes               | ""      | list of scopes (Conventional Commits)                                                     |
-| commit_type_\<type>         | ""      | list of commit messages for the given commit type (Conventional Commits)                  |
-| commit_scope_\<scope>       | ""      | list of commit messages for the given commit scope (Conventional Commits)                 |
-| x_has_changes_\<lang>       | false   | true on file changes exists between current sha and latest tag                            |
-| x_has_local_changes_\<lang> | false   | true if there are changes on non committed files for the specific language                |
-| x_language_list             | -       | a list of supported languages for `x_has_changes_<lang>` and `x_has_local_changes_<lang>` |
+| Name                        | Example                                                         | Default | Description                                                                               |
+|-----------------------------|-----------------------------------------------------------------|---------|-------------------------------------------------------------------------------------------|
+| branch                      | main                                                            | main    | Current branch                                                                            |
+| branch_default              | main                                                            | main    | Default branch                                                                            |
+| commits_ahead               | 0                                                               | 0       | Branch commits that are not in the branch_default                                         |
+| commits_behind              | 0                                                               | 0       | Branch_default commits that are not in the branch                                         |
+| is_default_branch           | false                                                           | false   | true if `branch` == `branch_default`                                                      |
+| has_changes                 | false                                                           | false   | true if `sha_latest` != `sha_latest_tag`                                                  |
+| has_local_changes           | false                                                           | false   | true if there are changes on non committed files                                          |
+| has_breaking_changes        | false                                                           | false   | true if a commit has a breaking change (Conventional Commits)                             |
+| sha_latest                  | "b63fd71e769ca531cf47192312af3e804793538d"                      | null    | SHA from latest commit                                                                    |
+| sha_latest_tag              | "e3fb9b698ee7b0e725adaf16187be06d732a7e3f"                      | null    | SHA from latest tag                                                                       |
+| tag_latest                  | 0.0.1                                                           | null    | Latest tag                                                                                |
+| ticket_numbers              | "JIRA-123, #123"                                                | ""      | List of ticket numbers (Jira  GitHub)                                                     |
+| commit_types                | "feat, chore, docs"                                             | ""      | List of types (Conventional Commits)                                                      |
+| commit_scopes               | "frontend, feature_a, bug_b"                                    | ""      | List of scopes (Conventional Commits)                                                     |
+| commit_type_\<type>         | ""                                                              | ""      | List of commit messages for the given commit type (Conventional Commits)                  |
+| commit_scope_\<scope>       | ""                                                              | ""      | List of commit messages for the given commit scope (Conventional Commits)                 |
+| x_has_changes_\<lang>       | true                                                            | false   | true on file changes exists between current sha and latest tag                            |
+| x_has_local_changes_\<lang> | true                                                            | false   | true if there are changes on non committed files for the specific language                |
+| x_language_list             | "go, html, css, java, js, json, md, php, python, yaml"          | -       | A list of supported languages for `x_has_changes_<lang>` and `x_has_local_changes_<lang>` |
+| context_ref                 | "refs/heads/main"                                               | null    | The git ref of the triggering event                                                       |
+| context_workflow_file       | ".github/workflows/trigger_test.yml"                            | null    | The workflow file where the triggering event occurred                                     |
+| context_actor_id            | 13748223                                                        | null    | The ID of the user or app that triggered the event                                        |
+| context_actor_name          | "YunaBraska"                                                    | null    | The name of the user or app that triggered the event                                      |
+| context_actor_type          | "User"                                                          | null    | The type of the user or app that triggered the event                                      |
+| context_sha                 | "b63fd71e769ca531cf47192312af3e804793538d"                      | null    | The git SHA of the commit that triggered the event                                        |
+| context_event_name          | "workflow_dispatch"                                             | null    | The name of the event that triggered the workflow                                         |
+| context_workflow_name       | "TRIGGER WORKFLOW CALL"                                         | null    | The name of the workflow that was triggered                                               |
+| context_job_name            | "build"                                                         | null    | The name of the job that was triggered                                                    |
+| context_run_id              | 4398246357                                                      | null    | The ID of the workflow run that was triggered                                             |
+| context_run_number          | 8                                                               | null    | The number of the workflow run that was triggered                                         |
+| repo_id                     | 612981281                                                       | null    | The ID of the repository where the triggering event occurred                              |
+| repo_size                   | 0                                                               | null    | The size of the repository where the triggering event occurred                            |
+| repo_open_issues            | 0                                                               | null    | The number of open issues in the repository where the triggering event occurred           |
+| repo_star_count             | 0                                                               | null    | The number of stars the repository where the triggering event occurred has                |
+| is_repo_fork                | false                                                           | null    | Whether the repository where the triggering event occurred is a fork                      |
+| is_repo_private             | false                                                           | null    | Whether the repository where the triggering event occurred is private                     |
+| is_repo_archived            | false                                                           | null    | Whether the repository where the triggering event occurred is archived                    |
+| is_repo_disabled            | false                                                           | null    | Whether the repository where the triggering event occurred is disabled                    |
+| is_repo_template            | false                                                           | null    | Whether the repository where the triggering event occurred is a template                  |
+| repo_visibility             | "public"                                                        | null    | The visibility of the repository where the triggering event occurred                      |
+| repo_default_branch         | "main"                                                          | null    | The default branch of the repository where the triggering event occurred                  |
+| repo_language               | "TypeScript"                                                    | null    | The main language used in the repository where the triggering event occurred              |
+| repo_name                   | "input-merger-action"                                           | null    | The name of the repository where the triggering event occurred                            |
+| repo_created_at             | "2023-03-12T14:59:30Z"                                          | null    | The date and time the repository where the triggering event occurred was created          |
+| repo_updated_at             | "2023-03-12T15:01:13Z"                                          | null    | The date and time the repository where the triggering event occurred was last updated     |
+| repo_html_url               | "https://github.com/YunaBraska/git-info-action"                 | null    | The URL of the repository                                                                 |
+| repo_hooks_url              | "https://api.github.com/repos/YunaBraska/git-info-action/hooks" | null    | The URL of the repository's hooks                                                         |
+| repo_description            | "Git insights such as branch, commit, tag, ticket number,..."   | null    | The description of the repository                                                         |
+| repo_license_key            | "apache-2.0"                                                    | null    | The license key of the repository                                                         |
+| repo_license_name           | "Apache License 2.0"                                            | null    | The license name of the repository                                                        |
+| repo_owner_id               | 13748223                                                        | null    | The ID of the owner of the repository                                                     |
+| repo_owner_name             | "YunaBraska"                                                    | null    | The username of the owner of the repository                                               |
+| repo_owner_type             | "User"                                                          | null    | The type of the owner                                                                     |
+
 
 ### \[DEV] Setup Environment
 

@@ -29,6 +29,10 @@ inputs:
     description: 'include footer from commit messages (Conventional Commits)'
     required: false
     default: 'true'
+  null-to-empty:
+    description: 'include footer from commit messages (Conventional Commits)'
+    required: false
+    default: 'true'
 outputs:
   branch:
     description: 'current branch'
@@ -60,6 +64,60 @@ outputs:
     description: 'list of commit scopes (Conventional Commits)'
   x_language_list:
     description: 'a list of supported language for x_has_changes_<lang>'
+  event_name:
+    description: "The name of the event that triggered the workflow."
+  event_source:
+    description: "The source of the event that triggered the workflow."
+  var_with_default:
+    description: "The value of a variable with a default value."
+  var_should_be_set:
+    description: "The value of a variable that should be set by the user."
+  repo_id:
+    description: "The ID of the repository."
+  repo_size:
+    description: "The size of the repository."
+  repo_open_issues:
+    description: "The number of open issues in the repository."
+  repo_star_count:
+    description: "The number of stars the repository has."
+  is_repo_fork:
+    description: "Whether the repository is a fork."
+  is_repo_private:
+    description: "Whether the repository is private."
+  is_repo_archived:
+    description: "Whether the repository is archived."
+  is_repo_disabled:
+    description: "Whether the repository is disabled."
+  is_repo_template:
+    description: "Whether the repository is a template."
+  repo_visibility:
+    description: "The visibility of the repository."
+  repo_default_branch:
+    description: "The default branch of the repository."
+  repo_language:
+    description: "The language of the repository."
+  repo_name:
+    description: "The name of the repository."
+  repo_created_at:
+    description: "The creation date of the repository."
+  repo_updated_at:
+    description: "The last update date of the repository."
+  repo_html_url:
+    description: "The URL of the repository's HTML page."
+  repo_hooks_url:
+    description: "The URL of the repository's hooks."
+  repo_description:
+    description: "The description of the repository."
+  repo_license_key:
+    description: "The key of the repository's license."
+  repo_license_name:
+    description: "The name of the repository's license."
+  repo_owner_id:
+    description: "The ID of the repository's owner."
+  repo_owner_name:
+    description: "The name of the repository's owner."
+  repo_owner_type:
+    description: "The type of the repository's owner."
 runs:
   using: 'node16'
   main: 'lib/index.js'

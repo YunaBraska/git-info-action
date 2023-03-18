@@ -4,9 +4,66 @@ import * as os from 'os';
 import * as path from 'path';
 
 const main = require('../src/index');
+import {deleteBranchPrefix, cmd, cmdLog} from '../src/common_processing';
 const LINE_SEPARATOR = os.EOL;
 
 let workDir: PathOrFileDescriptor;
+
+const context = {
+    payload: {
+        inputs: {
+            input_2: "AaBbCc"
+        },
+        ref: "refs/heads/main",
+        workflow: ".github/workflows/trigger_test.yml",
+        repository: {
+            id: 612981281,
+            size: 0,
+            forks_count: 0,
+            open_issues: 0,
+            stargazers_count: 0,
+            fork: false,
+            private: false,
+            archived: false,
+            disabled: false,
+            is_template: false,
+            allow_forking: true,
+            visibility: "public",
+            default_branch: "main",
+            language: "TypeScript",
+            name: "input-merger-action",
+            created_at: "2023-03-12T14:59:30Z",
+            updated_at: "2023-03-12T15:01:13Z",
+            html_url: "https://github.com/YunaBraska/input-merger-action",
+            description: "Combines user and default inputs for your workflows.",
+            hooks_url: "https://api.github.com/repos/YunaBraska/input-merger-action/hooks",
+            license: {
+                key: "apache-2.0",
+                name: "Apache License 2.0",
+            },
+            owner: {
+                id: 13748223,
+                type: "User",
+                login: "YunaBraska",
+                html_url: "https://github.com/YunaBraska",
+            },
+        },
+        sender: {
+            id: 13748223,
+            type: "User",
+            login: "YunaBraska",
+            html_url: "https://github.com/YunaBraska",
+        }
+    },
+    eventName: "workflow_dispatch",
+    sha: "b63fd71e769ca531cf47192312af3e804793538d",
+    ref: "refs/heads/main",
+    workflow: "TRIGGER WORKFLOW CALL",
+    actor: "YunaBraska",
+    job: "build",
+    runNumber: 8,
+    runId: 4398246357,
+};
 
 beforeEach(() => {
     workDir = path.join(os.tmpdir(), 'git_info_action_test');
@@ -19,7 +76,7 @@ afterEach(() => {
 });
 
 test('Test on empty dir', () => {
-    let result = main.run(workDir, new Set<string>(), null, null, null, null, null);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null);
     expect(result.get('ignore-files')).toEqual(null)
     expect(result.get('has_breaking_changes')).toEqual(false)
     expect(result.get('commit_types')).toEqual("")
@@ -42,7 +99,7 @@ test('Test on empty dir', () => {
 });
 
 test('Test on empty dir with "branch-fallback"', () => {
-    let result = main.run(workDir, new Set<string>(), 'my_fallback_branch', null, null, null, null);
+    let result = main.run(null, workDir, new Set<string>(), 'my_fallback_branch', null, null, null, null, null);
     expect(result.get('ignore-files')).toEqual(null)
     expect(result.get('has_breaking_changes')).toEqual(false)
     expect(result.get('commit_types')).toEqual("")
@@ -65,7 +122,7 @@ test('Test on empty dir with "branch-fallback"', () => {
 });
 
 test('Test on empty dir with "tag-fallback"', () => {
-    let result = main.run(workDir, new Set<string>(), null, '1.2.3', null, null, null);
+    let result = main.run(null, workDir, new Set<string>(), null, '1.2.3', null, null, null, null);
     expect(result.get('ignore-files')).toEqual(null)
     expect(result.get('has_breaking_changes')).toEqual(false)
     expect(result.get('commit_types')).toEqual("")
@@ -92,7 +149,7 @@ test('Test with file [howdy.java]', () => {
     setupGit(workDir)
     fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
 
-    let result = main.run(workDir, new Set<string>(), null, null, null, null, null);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null);
     expect(result.get('ignore-files')).toEqual(null)
     expect(result.get('has_breaking_changes')).toEqual(false)
     expect(result.get('commit_types')).toEqual("")
@@ -119,7 +176,7 @@ test('Test with file [howdy.java] && commit', () => {
     setupGit(workDir)
     commitFile("howdy.java", `init commit`);
 
-    let result = main.run(workDir, new Set<string>(), null, null, null, null, null);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null);
     expect(result.get('ignore-files')).toEqual(null)
     expect(result.get('has_breaking_changes')).toEqual(false)
     expect(result.get('commit_types')).toEqual("")
@@ -144,14 +201,14 @@ test('Test with file [howdy.java] && commit', () => {
 
 test('Test with file [howdy.java] && branch && default branch [init] && commit', () => {
     setupGit(workDir)
-    main.cmd(workDir, 'git branch -m main')
-    main.cmd(workDir, 'git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main')
+    cmd(workDir, 'git branch -m main')
+    cmd(workDir, 'git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main')
     commitFile("main.file", `init commit main`);
 
-    main.cmdLog(workDir, 'git checkout -b add_file')
+    cmdLog(workDir, 'git checkout -b add_file')
     commitFile("howdy.java", `init commit branch`);
 
-    let result = main.run(workDir, new Set<string>(), null, null, null, null, null);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null);
     expect(result.get('ignore-files')).toEqual(null)
     expect(result.get('has_breaking_changes')).toEqual(false)
     expect(result.get('commit_types')).toEqual("")
@@ -179,7 +236,7 @@ test('Test with ignore files', () => {
     fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
     fs.writeFileSync(path.join(workDir.toString(), "howdy.py"), "Hello there!");
 
-    let result = main.run(workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null);
+    let result = main.run(null, workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null, null);
     expect(result.get('ignore-files')).toEqual(".java, .jar")
     expect(result.get('has_breaking_changes')).toEqual(false)
     expect(result.get('commit_types')).toEqual("")
@@ -207,7 +264,7 @@ test('Test with ignore files should not have changes', () => {
     setupGit(workDir)
     fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
 
-    let result = main.run(workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null);
+    let result = main.run(null, workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null, null);
     expect(result.get('ignore-files')).toEqual(".java, .jar")
     expect(result.get('has_breaking_changes')).toEqual(false)
     expect(result.get('commit_types')).toEqual("")
@@ -232,10 +289,10 @@ test('Test with ignore files should not have changes', () => {
 
 test('Test conventional commit', () => {
     setupGit(workDir)
-    main.cmdLog(workDir, 'git branch -m main')
-    main.cmdLog(workDir, 'git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main')
+    cmdLog(workDir, 'git branch -m main')
+    cmdLog(workDir, 'git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main')
     commitFile("00.txt", "init commit");
-    main.cmdLog(workDir, 'git tag 1.0.0')
+    cmdLog(workDir, 'git tag 1.0.0')
     commitFile("aa.txt", "feat(shopping cart): add the amazing button");
     commitFile("bb.txt", "feat: remove ticket list endpoint");
     commitFile("cc.txt", `feat: remove ticket list endpoint${LINE_SEPARATOR}refers to JIRA-1337${LINE_SEPARATOR}BREAKING CHANGES: ticket endpoints no longer supports list all entites.`);
@@ -252,7 +309,7 @@ test('Test conventional commit', () => {
     commitFile("nn.txt", `style:`);
     commitFile("oo.txt", `hi:`);
 
-    let result = main.run(workDir, new Set<string>(), null, null, null, null, null);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null);
     expect(result.get('has_changes')).toEqual(true)
     expect(result.get('has_breaking_changes')).toEqual(true)
     expect(result.get('commit_types')).toEqual("build, chore, docs, feat, fix, hi, refactor, style")
@@ -262,15 +319,15 @@ test('Test conventional commit', () => {
 
 test('Test conventional commit with defaults && with footer && no breaking change', () => {
     setupGit(workDir)
-    main.cmdLog(workDir, 'git branch -m main')
-    main.cmdLog(workDir, 'git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main')
+    cmdLog(workDir, 'git branch -m main')
+    cmdLog(workDir, 'git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main')
     commitFile("00.txt", "init commit");
-    main.cmdLog(workDir, 'git tag 1.0.0')
+    cmdLog(workDir, 'git tag 1.0.0')
     commitFile("aa.txt", `feat(shopping cart): add the amazing button${LINE_SEPARATOR}JIRA-1337`);
     commitFile("bb.txt", `feat: add the amazing button${LINE_SEPARATOR}Refs: #123`);
     commitFile("cc.txt", `drop support for Node 6 #1338`);
 
-    let result = main.run(workDir, new Set<string>(), null, null, 'default-type', 'default-scope', true);
+    let result = main.run(null, workDir, new Set<string>(), null, null, 'default-type', 'default-scope', true, null);
     expect(result.get('has_changes')).toEqual(true)
     expect(result.get('has_breaking_changes')).toEqual(false)
     expect(result.get('commit_types')).toEqual("default-type, feat")
@@ -280,15 +337,15 @@ test('Test conventional commit with defaults && with footer && no breaking chang
 
 test('Test conventional commit with defaults && no footer && breaking change', () => {
     setupGit(workDir)
-    main.cmdLog(workDir, 'git branch -m main')
-    main.cmdLog(workDir, 'git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main')
+    cmdLog(workDir, 'git branch -m main')
+    cmdLog(workDir, 'git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main')
     commitFile("00.txt", "init commit");
-    main.cmdLog(workDir, 'git tag 1.0.0')
+    cmdLog(workDir, 'git tag 1.0.0')
     commitFile("aa.txt", `feat(shopping cart): add the amazing button${LINE_SEPARATOR}JIRA-1337`);
     commitFile("bb.txt", `feat!: add the amazing button${LINE_SEPARATOR}Refs: #123`);
     commitFile("cc.txt", `drop support for Node 6 #1338`);
 
-    let result = main.run(workDir, new Set<string>(), null, null, 'default-type', 'default-scope', false);
+    let result = main.run(null, workDir, new Set<string>(), null, null, 'default-type', 'default-scope', false, null);
     expect(result.get('has_changes')).toEqual(true)
     expect(result.get('has_breaking_changes')).toEqual(true)
     expect(result.get('commit_types')).toEqual("default-type, feat")
@@ -296,20 +353,78 @@ test('Test conventional commit with defaults && no footer && breaking change', (
     expect(result.get('ticket_numbers')).toEqual("#1338")
 });
 
-function commitFile(name: string, message : string) {
+test('Test context', () => {
+    setupGit(workDir)
+
+    let result = main.run(context, workDir, new Set<string>(), null, null, null, null, null, null);
+    //PAYLOAD
+    expect(result.get('context_ref')).toEqual(context.payload.ref)
+    expect(result.get('context_workflow_file')).toEqual(context.payload.workflow)
+    expect(result.get('context_actor_id')).toEqual(context.payload.sender.id)
+    expect(result.get('context_actor_name')).toEqual(context.payload.sender.login)
+    expect(result.get('context_actor_type')).toEqual(context.payload.sender.type)
+
+    //CONTEXT
+    expect(result.get('context_sha')).toEqual(context.sha)
+    expect(result.get('context_event_mame')).toEqual(context.eventName)
+    expect(result.get('context_workflow_name')).toEqual(context.workflow)
+    expect(result.get('context_job_name')).toEqual(context.job)
+    expect(result.get('context_run_id')).toEqual(context.runId)
+    expect(result.get('context_run_number')).toEqual(context.runNumber)
+
+    //REPOSITORY
+    expect(result.get('repo_id')).toEqual(context.payload.repository.id)
+    expect(result.get('repo_size')).toEqual(context.payload.repository.size)
+    expect(result.get('repo_open_issues')).toEqual(context.payload.repository.open_issues)
+    expect(result.get('repo_star_count')).toEqual(context.payload.repository.stargazers_count)
+    expect(result.get('is_repo_fork')).toEqual(context.payload.repository.fork)
+    expect(result.get('is_repo_private')).toEqual(context.payload.repository.private)
+    expect(result.get('is_repo_archived')).toEqual(context.payload.repository.archived)
+    expect(result.get('is_repo_disabled')).toEqual(context.payload.repository.disabled)
+    expect(result.get('is_repo_template')).toEqual(context.payload.repository.is_template)
+    expect(result.get('repo_visibility')).toEqual(context.payload.repository.visibility)
+    expect(result.get('repo_default_branch')).toEqual(context.payload.repository.default_branch)
+    expect(result.get('repo_language')).toEqual(context.payload.repository.language)
+    expect(result.get('repo_name')).toEqual(context.payload.repository.name)
+    expect(result.get('repo_created_at')).toEqual(context.payload.repository.created_at)
+    expect(result.get('repo_updated_at')).toEqual(context.payload.repository.updated_at)
+    expect(result.get('repo_html_url')).toEqual(context.payload.repository.html_url)
+    expect(result.get('repo_hooks_url')).toEqual(context.payload.repository.hooks_url)
+    expect(result.get('repo_description')).toEqual(context.payload.repository.description)
+    expect(result.get('repo_license_key')).toEqual(context.payload.repository.license.key)
+    expect(result.get('repo_license_name')).toEqual(context.payload.repository.license.name)
+    expect(result.get('repo_owner_id')).toEqual(context.payload.repository.owner.id)
+    expect(result.get('repo_owner_name')).toEqual(context.payload.repository.owner.login)
+    expect(result.get('repo_owner_type')).toEqual(context.payload.repository.owner.type)
+    expect(result.get('branch')).toEqual(context.payload.repository.default_branch)
+    expect(result.get('branch_default')).toEqual(deleteBranchPrefix(context.payload.ref))
+});
+
+test('Test null to empty', () => {
+    setupGit(workDir)
+    fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
+
+    let result = main.run(null, workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null, true);
+    expect(result.get('tag-fallback')).toEqual("")
+    expect(result.get('tag_latest')).toEqual("")
+    expect(result.get('sha_latest')).toEqual("")
+    expect(result.get('sha_latest_tag')).toEqual("")
+});
+
+function commitFile(name: string, message: string) {
     fs.writeFileSync(path.join(workDir.toString(), name), message);
-    main.cmdLog(workDir, 'git add .')
-    main.cmdLog(workDir, `git commit -am "${message}"`)
+    cmdLog(workDir, 'git add .')
+    cmdLog(workDir, `git commit -am "${message}"`)
 }
 
 function setupGit(workDir: PathOrFileDescriptor) {
-    main.cmd("git config init.defaultBranch main");
-    main.cmd("git config --global init.defaultBranch main");
-    main.cmd(workDir, 'git init')
-    main.cmd(workDir, 'git checkout -b main')
-    main.cmd(workDir, 'git config --file .git/config user.email "kira@yuna.berlin"')
-    main.cmd(workDir, 'git config --file .git/config user.name "Kira"')
-    console.log('is_git_repo' + main.cmd(workDir, 'git rev-parse --is-inside-work-tree', 'git rev-parse --git-dir'))
+    cmd("git config init.defaultBranch main");
+    cmd("git config --global init.defaultBranch main");
+    cmd(workDir, 'git init')
+    cmd(workDir, 'git checkout -b main')
+    cmd(workDir, 'git config --file .git/config user.email "kira@yuna.berlin"')
+    cmd(workDir, 'git config --file .git/config user.name "Kira"')
+    console.log('is_git_repo' + cmd(workDir, 'git rev-parse --is-inside-work-tree', 'git rev-parse --git-dir'))
 }
 
 function removeDir(folderPath: PathOrFileDescriptor) {
