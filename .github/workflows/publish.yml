@@ -15,7 +15,7 @@ on:
     - cron: "0 8 * * *"
 
 jobs:
-  tag:
+  release:
     runs-on: ubuntu-latest
     # Map the job outputs to step outputs
     outputs:
@@ -102,14 +102,13 @@ jobs:
           skip_checkout: true
           disable_globbing: true
           create_branch: false
-  tag_outputs:
-    needs: "tag"
-    runs-on: ubuntu-latest
-    steps:
-      - name: "print"
-        run: |
-          echo "-------------------- OUTPUTS --------------------"
-          echo "semver                    [${{needs.tag.outputs.semver}}]"
-          echo "new_version               [${{needs.tag.outputs.new_version}}]"
-          echo "--------------------- ENVS ---------------------"
-          env
+      - name: "Create GitHub Release"
+        if: steps.git_info.outputs.has_changes == 'true' || steps.git_info.outputs.has_local_changes == 'true'
+        id: "create_release"
+        uses: ncipollo/release-action@main
+        with:
+          makeLatest: true
+          generateReleaseNotes: true
+          body: ${{ steps.git_info.outputs.commit_type_feat }}
+          tag: ${{ steps.semver_info.outputs.clean_semver }}
+          token: ${{ secrets.CI || secrets.CI_TOKEN_WORKFLOW || github.token }}
