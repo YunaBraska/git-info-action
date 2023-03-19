@@ -60,6 +60,7 @@ jobs:
         uses: YunaBraska/semver-info-action@main
         with:
           semver-a: ${{ steps.git_info.outputs.tag_latest }}
+          semver-b: ${{ steps.git_info.outputs.tag_latest }}
           increase-a: ${{ inputs.semver_strategy || 'patch' }}
       - name: "Write Version.txt [${{steps.semver_info.outputs.clean_semver}}]"
         if: steps.semver_info.outputs.version_txt_path != '' || steps.semver_info.outputs.version_txt_path == 'null'
@@ -85,7 +86,7 @@ jobs:
         uses: ncipollo/release-action@main
         with:
           makeLatest: true
-          generateReleaseNotes: false
+          generateReleaseNotes: true
           body: ${{ steps.git_info.outputs.commit_type_feat }}
           tag: ${{ steps.semver_info.outputs.clean_semver }}
           token: ${{ secrets.CI || secrets.CI_TOKEN_WORKFLOW || github.token }}
@@ -98,3 +99,11 @@ jobs:
           CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
         with:
           coverageLocations: ${{github.workspace}}/coverage/*.lcov:lcov
+      - name: "Send toot to Mastodon"
+        uses: cbrgm/mastodon-github-action@main
+        with:
+          message: "${{steps.git_info.outputs.repo_name}} ${{steps.semver_info.outputs.clean_semver}} 🎉 ${{steps.git_info.outputs.commit_type_feat}} Try it out! https://github.com/marketplace/actions/${{steps.git_info.outputs.repo_name}} #GitHubActions #git #workflow #github #githubactions #githubaction @github"
+          visibility: "public" # default: public
+        env:
+          MASTODON_URL: https://hachyderm.io
+          MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }} # access token

@@ -40,7 +40,7 @@ export function sortMap(input: Map<string, any>): Map<string, any> {
 export function replaceNullWithEmptyMap(input: Map<string, any>): Map<string, any> {
     const output = new Map<string, any>();
     input.forEach((value, key) => {
-        if (value === null || value === undefined) {
+        if (value === null || value === undefined || value === 'null') {
             output.set(key, '');
         } else {
             output.set(key, value);
