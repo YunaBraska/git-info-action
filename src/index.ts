@@ -1,6 +1,7 @@
 //https://github.com/actions/toolkit/tree/main/packages/
 import {PathOrFileDescriptor} from "fs";
 import {
+    CHANGE_TYPES,
     cmd,
     deleteBranchPrefix,
     getTicketNumbers,
@@ -163,8 +164,9 @@ function addSemCommits(result: Map<string, ResultType>, workDir: string | Buffer
     if (result.get("has_changes")) {
         let commits = toCommitMessages(cmd(workDir, 'git log ' + result.get('sha_latest_tag') + '..' + result.get('sha_latest')))
             .map(commit => toSemanticCommit(commit[3], fallbackCommitType, fallbackCommitScope, commitMsgWithFooter));
+        let hasBreakingChange = commits.some(([_, __, breakingChange]) => !isEmpty(breakingChange) ? breakingChange.toLowerCase() === 'true' : false);
         result.set("ticket_numbers", getTicketNumbers(commits).join(', '));
-        result.set("has_breaking_changes", commits.some(([_, __, breakingChange]) => !isEmpty(breakingChange) ? breakingChange.toLowerCase() === 'true' : false));
+        result.set("has_breaking_changes", hasBreakingChange);
 
         let typeMap = new Map<string, string[]>();
         let scopeMap = new Map<string, string[]>();
@@ -188,6 +190,11 @@ function addSemCommits(result: Map<string, ResultType>, workDir: string | Buffer
         scopeMap.forEach((value, key) => {
             result.set("commit_scope_" + key, value.join(`. ${LINE_SEPARATOR}`));
         });
+
+        const keys = Array.from(typeMap.keys());
+        result.set("change_type", hasBreakingChange ? 'major' : CHANGE_TYPES.find(([key, _]) => keys.includes(key))?.[1] || null);
+
+        sortMap(typeMap).keys();
     }
 }
 

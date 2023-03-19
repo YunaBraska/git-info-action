@@ -7,6 +7,24 @@ export const LINE_SEPARATOR = os.EOL;
 export const BC_PATTERN = /\Wbreaking\W?change\W/mgi;
 export const TICKET_PATTERN = /(\w*)-\d+|#\d+/mgi;
 export const LINE_SPLIT_REGEX = /\r?\n|\r/g;
+export const CHANGE_TYPES = [
+    ['major', 'major'],
+    ['fix', 'patch'],
+    ['fixs', 'patch'],
+    ['patch', 'patch'],
+    ['refactor', 'minor'],
+    ['feats', 'minor'],
+    ['feat', 'minor'],
+    ['minor', 'minor'],
+    ['build', 'rc'],
+    ['rc', 'rc'],
+    ['ci', 'rc'],
+    ['docs', 'rc'],
+    ['style', 'rc'],
+    ['perf', 'rc'],
+    ['test', 'rc'],
+    ['chore', 'rc']
+];
 
 export function str(result: string | number | boolean | null | undefined): string {
     return (result ?? '').toString();

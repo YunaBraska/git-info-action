@@ -30,7 +30,7 @@ inputs:
     required: false
     default: 'true'
   null-to-empty:
-    description: 'include footer from commit messages (Conventional Commits)'
+    description: 'converts null to empty string'
     required: false
     default: 'true'
 outputs:
@@ -62,6 +62,8 @@ outputs:
     description: 'list of commit types (Conventional Commits)'
   commit_scopes:
     description: 'list of commit scopes (Conventional Commits)'
+  change_type:
+    description: 'Change Type [major, minor, patch, rc] (Conventional Commits)'
   x_language_list:
     description: 'a list of supported language for x_has_changes_<lang>'
   event_name:

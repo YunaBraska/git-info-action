@@ -85,6 +85,7 @@ variety of programming languages and conventions.
 | ticket_numbers              | "JIRA-123, #123"                                                | ""      | List of ticket numbers (Jira  GitHub)                                                     |
 | commit_types                | "feat, chore, docs"                                             | ""      | List of types (Conventional Commits)                                                      |
 | commit_scopes               | "frontend, feature_a, bug_b"                                    | ""      | List of scopes (Conventional Commits)                                                     |
+| change_type                 | "major"                                                         | ""      | Change Type \[major, minor, patch, rc] (Conventional Commits)                             |
 | commit_type_\<type>         | ""                                                              | ""      | List of commit messages for the given commit type (Conventional Commits)                  |
 | commit_scope_\<scope>       | ""                                                              | ""      | List of commit messages for the given commit scope (Conventional Commits)                 |
 | x_has_changes_\<lang>       | true                                                            | false   | true on file changes exists between current sha and latest tag                            |
