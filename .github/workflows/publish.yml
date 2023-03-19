@@ -25,36 +25,21 @@ jobs:
       - name: "Read Input"
         id: "inputs"
         run: |
-          echo "--------------------- VALIDATION ---------------"
-          if [ "$GITHUB_ACTOR" != "YunaBraska" ]; then echo "Permission denied for user [$GITHUB_ACTOR]"; exit 1; fi
           echo "--------------------- REF ----------------------"
           ref_default=${{ github.ref_name || github.head_ref }}
-          ref="${ref_A:-${ref_B:-${ref_C:-${ref_default}}}}"
+          ref="${ref_in:-${ref_default}}"
           echo "ref=$ref" >> $GITHUB_OUTPUT
-          echo "--------------------- SEMVER STRATEGY ----------"
-          semver_strategy="${semver_strategy_A:-${semver_strategy_B:-${semver_strategy_C:-patch}}}"
-          echo "semver_strategy [$semver_strategy]"
-          echo "semver_strategy=$semver_strategy" >> $GITHUB_OUTPUT
-          echo "--------------------- CODE CLIMATE -------------"
-          has_publish_to_code_climate=$(if [[ "${{secrets.CC_TEST_REPORTER_ID}}" == "" ]]; then echo "false"; else echo "true"; fi)
-          echo "has_publish_to_code_climate [$has_publish_to_code_climate]"
-          echo "has_publish_to_code_climate=$has_publish_to_code_climate" >> $GITHUB_OUTPUT
           echo "--------------------- ENVS ---------------------"
           env
         env:
-          ref_A: ${{ inputs.ref }}
-          ref_B: ${{ github.event.inputs.ref }}
-          ref_C: ${{ github.event.client_payload.ref }}
-          semver_strategy_A: ${{ inputs.semver_strategy }}
-          semver_strategy_B: ${{ github.event.inputs.semver_strategy }}
-          semver_strategy_C: ${{ github.event.client_payload.semver_strategy }}
-      - name: "Checkout"
+          ref_in: ${{ inputs.ref }}
+      - name: "Checkout [${{steps.inputs.outputs.ref}}]"
         uses: actions/checkout@main
         with:
           fetch-depth: 500
           ref: ${{ steps.inputs.outputs.ref }}
           token: ${{ secrets.CI || secrets.CI_TOKEN_WORKFLOW || github.token }}
-      - name: "Setup Node"
+      - name: "Setup Node [16]"
         uses: actions/setup-node@main
         with:
           node-version: "16"
@@ -67,28 +52,21 @@ jobs:
       - name: "Run Tests"
         run: |
           npm ci && npm run test:coverage
-      - name: "Publish code quality"
-        uses: paambaati/codeclimate-action@v3.2.0
-        if: steps.inputs.outputs.has_publish_to_code_climate == 'true'
-        env:
-          CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
-        with:
-          coverageLocations: ${{github.workspace}}/coverage/*.lcov:lcov
       - name: "Read Git Info"
         id: "git_info"
         uses: YunaBraska/git-info-action@main
-      - name: "Get Semver Info"
+      - name: "Get Semver Info [${{steps.git_info.outputs.tag_latest}}]"
         id: "semver_info"
         uses: YunaBraska/semver-info-action@main
         with:
           semver-a: ${{ steps.git_info.outputs.tag_latest }}
-          increase-a: ${{ steps.inputs.outputs.semver_strategy }}
-      - name: "Write Version.txt"
+          increase-a: ${{ inputs.semver_strategy || 'patch' }}
+      - name: "Write Version.txt [${{steps.semver_info.outputs.clean_semver}}]"
         if: steps.semver_info.outputs.version_txt_path != '' || steps.semver_info.outputs.version_txt_path == 'null'
         run: |
           echo "version [${{ steps.semver_info.outputs.clean_semver }}]"
           echo "${{steps.semver_info.outputs.clean_semver}}" > "${{steps.semver_info.outputs.version_txt_path}}"
-      - name: "Push changes"
+      - name: "Push changes [${{steps.semver_info.outputs.clean_semver}}]"
         if: steps.git_info.outputs.has_changes == 'true' || steps.git_info.outputs.has_local_changes == 'true'
         uses: stefanzweifel/git-auto-commit-action@master
         with:
@@ -104,11 +82,19 @@ jobs:
           create_branch: false
       - name: "Create GitHub Release"
         if: steps.git_info.outputs.has_changes == 'true' || steps.git_info.outputs.has_local_changes == 'true'
-        id: "create_release"
         uses: ncipollo/release-action@main
         with:
           makeLatest: true
-          generateReleaseNotes: true
+          generateReleaseNotes: false
           body: ${{ steps.git_info.outputs.commit_type_feat }}
           tag: ${{ steps.semver_info.outputs.clean_semver }}
           token: ${{ secrets.CI || secrets.CI_TOKEN_WORKFLOW || github.token }}
+      - name: "Publish code quality"
+        uses: paambaati/codeclimate-action@v3.2.0
+        if: |
+          env.CC_TEST_REPORTER_ID != '' &&
+          (steps.git_info.outputs.has_changes == 'true' || steps.git_info.outputs.has_local_changes == 'true')
+        env:
+          CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
+        with:
+          coverageLocations: ${{github.workspace}}/coverage/*.lcov:lcov
