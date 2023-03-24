@@ -16,7 +16,7 @@ jobs:
     uses: YunaBraska/YunaBraska/.github/workflows/wc_node_publish.yml@main
     with:
       ref: ${{ inputs.ref || github.ref_name || github.head_ref }}
-      mastodon_suffix: '#GitHubActions #java #maven #gradle #workflow #github #githubactions #githubaction @github'
+      mastodon_suffix: '#GitHubActions #git #workflow #github #githubactions #githubaction @github'
     secrets:
       CI_WORKFLOW_TOKEN: ${{ secrets.CI_TOKEN_WORKFLOW || secrets.CI_TOKEN || github.token }}
       CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
