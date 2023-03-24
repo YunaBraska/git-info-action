@@ -3,10 +3,16 @@ name: "TEST"
 on:
   workflow_dispatch:
   push:
+    # Already covered by "publish.yml" workflow
+    branches:
+      - '*'         # matches every branch that doesn't contain a '/'
+      - '*/*'       # matches every branch containing a single '/'
+      - '**'        # matches every branch
+      - '!master'
+      - '!main'
+      - '!default'
     tags-ignore:
       - '**'
-    paths-ignore:
-      - '**.md'
 
 jobs:
   test:
@@ -45,3 +51,5 @@ jobs:
           echo "commit_scopes        [${{ steps.git_info.outputs.commit_scopes }}]"
           echo "ticket_numbers       [${{ steps.git_info.outputs.ticket_numbers }}]"
           echo "x_has_changes_python [${{ steps.git_info.outputs.x_has_changes_python }}]"
+          echo "change_log           [${{ steps.git_info.outputs.change_log }}]"
+          echo "change_log_type_feat [${{ steps.git_info.outputs.change_log_type_feat }}]"

@@ -34,6 +34,7 @@ variety of programming languages and conventions.
     fallback-commit-type: 'chore'
     fallback-commit-scope: 'performance'
     commit-msg-with-footer: 'true'
+    max-changelog-length: 200
 
   # PRINT
 - name: "Print Git Info"
@@ -49,6 +50,8 @@ variety of programming languages and conventions.
     echo "has_breaking_changes [${{ steps.git_info.outputs.has_breaking_changes }}]"
     echo "commit_types         [${{ steps.git_info.outputs.commit_types }}]"
     echo "commit_scopes        [${{ steps.git_info.outputs.commit_scopes }}]"
+    echo "change_log           [${{ steps.git_info.outputs.change_log }}]"
+    echo "change_log_type_feat [${{ steps.git_info.outputs.change_log_type_feat }}]"
     echo "ticket_numbers       [${{ steps.git_info.outputs.ticket_numbers }}]"
     echo "x_has_changes_python [${{ steps.git_info.outputs.x_has_changes_python }}]"
 
@@ -82,12 +85,13 @@ variety of programming languages and conventions.
 | sha_latest                  | "b63fd71e769ca531cf47192312af3e804793538d"                      | null    | SHA from latest commit                                                                    |
 | sha_latest_tag              | "e3fb9b698ee7b0e725adaf16187be06d732a7e3f"                      | null    | SHA from latest tag                                                                       |
 | tag_latest                  | 0.0.1                                                           | null    | Latest tag                                                                                |
-| ticket_numbers              | "JIRA-123, #123"                                                | ""      | List of ticket numbers (Jira  GitHub)                                                     |
-| commit_types                | "feat, chore, docs"                                             | ""      | List of types (Conventional Commits)                                                      |
-| commit_scopes               | "frontend, feature_a, bug_b"                                    | ""      | List of scopes (Conventional Commits)                                                     |
-| change_type                 | "major"                                                         | ""      | Change Type \[major, minor, patch, rc] (Conventional Commits)                             |
-| commit_type_\<type>         | ""                                                              | ""      | List of commit messages for the given commit type (Conventional Commits)                  |
-| commit_scope_\<scope>       | ""                                                              | ""      | List of commit messages for the given commit scope (Conventional Commits)                 |
+| ticket_numbers              | "JIRA-123, #123"                                                | null    | List of ticket numbers (Jira  GitHub)                                                     |
+| commit_types                | "feat, chore, docs"                                             | null    | List of types (Conventional Commits)                                                      |
+| commit_scopes               | "frontend, feature_a, bug_b"                                    | null    | List of scopes (Conventional Commits)                                                     |
+| change_type                 | "major"                                                         | null    | Change Type \[major, minor, patch, rc] (Conventional Commits)                             |
+| change_log                  | "Added ShopButton. Changed Logo"                                | null    | Full Change Log (Conventional Commits)                                                    |
+| change_log_type_\<type>     | "Added ShopButton."                                             | -       | Change Log for the given type (Conventional Commits)                                      |
+| change_log_scope_\<scope>   | "Changed Logo"                                                  | -       | Change Log for the given scope (Conventional Commits)                                     |
 | x_has_changes_\<lang>       | true                                                            | false   | true on file changes exists between current sha and latest tag                            |
 | x_has_local_changes_\<lang> | true                                                            | false   | true if there are changes on non committed files for the specific language                |
 | x_language_list             | "go, html, css, java, js, json, md, php, python, yaml"          | -       | A list of supported languages for `x_has_changes_<lang>` and `x_has_local_changes_<lang>` |
@@ -125,7 +129,6 @@ variety of programming languages and conventions.
 | repo_owner_id               | 13748223                                                        | null    | The ID of the owner of the repository                                                     |
 | repo_owner_name             | "YunaBraska"                                                    | null    | The username of the owner of the repository                                               |
 | repo_owner_type             | "User"                                                          | null    | The type of the owner                                                                     |
-
 
 ### \[DEV] Setup Environment
 

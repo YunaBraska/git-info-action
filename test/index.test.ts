@@ -87,7 +87,7 @@ test('Test isEmpty', () => {
 });
 
 test('Test on empty dir', () => {
-    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null, false);
     expect(result.get('ignore-files')).toEqual(null);
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual(null);
@@ -111,7 +111,7 @@ test('Test on empty dir', () => {
 });
 
 test('Test on empty dir with "branch-fallback"', () => {
-    let result = main.run(null, workDir, new Set<string>(), 'my_fallback_branch', null, null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(), 'my_fallback_branch', null, null, null, null, null, false);
     expect(result.get('ignore-files')).toEqual(null);
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual(null);
@@ -136,7 +136,7 @@ test('Test on empty dir with "branch-fallback"', () => {
 });
 
 test('Test on empty dir with "tag-fallback"', () => {
-    let result = main.run(null, workDir, new Set<string>(), null, '1.2.3', null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(), null, '1.2.3', null, null, null, null, false);
     expect(result.get('ignore-files')).toEqual(null);
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual(null);
@@ -165,7 +165,7 @@ test('Test with file [howdy.java]', () => {
     setupGit(workDir);
     fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
 
-    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null, false);
     expect(result.get('ignore-files')).toEqual(null);
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual('chore');
@@ -194,7 +194,7 @@ test('Test with file [howdy.java] && commit', () => {
     setupGit(workDir);
     commitFile("howdy.java", `init commit`);
 
-    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null, false);
     expect(result.get('ignore-files')).toEqual(null);
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual(null);
@@ -228,7 +228,7 @@ test('Test with file [howdy.java] && branch && default branch [init] && commit',
     cmdLog(workDir, 'git checkout -b add_file');
     commitFile("howdy.java", `init commit branch`);
 
-    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null, false);
     expect(result.get('ignore-files')).toEqual(null);
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual(null);
@@ -258,7 +258,7 @@ test('Test with ignore files', () => {
     fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
     fs.writeFileSync(path.join(workDir.toString(), "howdy.py"), "Hello there!");
 
-    let result = main.run(null, workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null, null, false);
     expect(result.get('ignore-files')).toEqual(".java, .jar");
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual('chore');
@@ -288,7 +288,7 @@ test('Test with ignore files should not have changes', () => {
     setupGit(workDir);
     fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
 
-    let result = main.run(null, workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null, null, false);
     expect(result.get('ignore-files')).toEqual(".java, .jar");
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual(null);
@@ -326,24 +326,29 @@ test('Test conventional commit', () => {
     commitFile("ee.txt", `build: update dependencies`);
     commitFile("ff.txt", `refactor: implement calculation method as recursion`);
     commitFile("gg.txt", `style: remove empty line`);
-    commitFile("hh.txt", `feat!: send an email to the customer when a product is shipped`);
-    commitFile("ii.txt", `feat(api)!: send an email to the customer when a product is shipped`);
-    commitFile("jj.txt", `chore!: drop support for Node 6${LINE_SEPARATOR}#1338 BREAKING CHANGE: use JavaScript features not available in Node 6.`);
-    commitFile("kk.txt", `docs: correct spelling of CHANGELOG`);
-    commitFile("ll.txt", `feat(lang): add Polish language`);
-    commitFile("mm.txt", `fix: prevent racing of requests${LINE_SEPARATOR}Introduce a request id and a reference to latest request. Dismiss${LINE_SEPARATOR}incoming responses other than from latest request.${LINE_SEPARATOR}Remove timeouts which were used to mitigate the racing issue but are${LINE_SEPARATOR}obsolete now.${LINE_SEPARATOR}Reviewed-by: Z${LINE_SEPARATOR}Refs: #123`);
-    commitFile("nn.txt", `style:`);
-    commitFile("oo.txt", `hi:`);
+    commitFile("hh.txt", `style: remove empty line`);
+    commitFile("ii.txt", `feat!: send an email to the customer when a product is shipped`);
+    commitFile("jj.txt", `feat(api)!: send an email to the customer when a product is shipped`);
+    commitFile("kk.txt", `chore!: drop support for Node 6${LINE_SEPARATOR}#1338 BREAKING CHANGE: use JavaScript features not available in Node 6.`);
+    commitFile("ll.txt", `docs: correct spelling of CHANGELOG`);
+    commitFile("mm.txt", `feat(lang): add Polish language`);
+    commitFile("nn.txt", `fix: prevent racing of requests`);
+    commitFile("oo.txt", `fix: prevent racing of requests${LINE_SEPARATOR}Introduce a request id and a reference to latest request. Dismiss${LINE_SEPARATOR}incoming responses other than from latest request.${LINE_SEPARATOR}Remove timeouts which were used to mitigate the racing issue but are${LINE_SEPARATOR}obsolete now.${LINE_SEPARATOR}Reviewed-by: Z${LINE_SEPARATOR}Refs: #123`);
+    commitFile("pp.txt", `style:`);
+    commitFile("qq.txt", `hi:`);
 
-    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, 50, false);
     expect(result.get('has_changes')).toEqual(true);
     expect(result.get('has_breaking_changes')).toEqual(true);
     expect(result.get('commit_types')).toEqual("build, chore, docs, feat, fix, hi, refactor, style");
     expect(result.get('commit_scopes')).toEqual("api, lang, shopping cart");
     expect(result.get('ticket_numbers')).toEqual("");
     expect(result.get('change_type')).toEqual("major");
+    expect(result.get('change_log').length).toEqual(50);
     expect(result.get('null-to-empty')).toEqual(false);
-
+    if (!os.platform().toLowerCase().startsWith('win')) {
+        expect(String(result.get('change_log')).trim()).toEqual(`Prevent racing of requests. ${LINE_SEPARATOR}Add missing parame...`);
+    }
 });
 
 test('Test conventional commit with defaults && with footer && no breaking change', () => {
@@ -356,7 +361,7 @@ test('Test conventional commit with defaults && with footer && no breaking chang
     commitFile("bb.txt", `feat: add the amazing button${LINE_SEPARATOR}Refs: #123`);
     commitFile("cc.txt", `drop support for Node 6 #1338`);
 
-    let result = main.run(null, workDir, new Set<string>(), null, null, 'default-type', 'default-scope', true, null);
+    let result = main.run(null, workDir, new Set<string>(), null, null, 'default-type', 'default-scope', true, null, null);
     expect(result.get('has_changes')).toEqual(true);
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual("default-type, feat");
@@ -379,7 +384,7 @@ test('Test conventional commit with defaults && no footer && breaking change', (
     commitFile("bb.txt", `feat!: add the amazing button${LINE_SEPARATOR}Refs: #123`);
     commitFile("cc.txt", `drop support for Node 6 #1338`);
 
-    let result = main.run(null, workDir, new Set<string>(), null, null, 'default-type', 'default-scope', false, true);
+    let result = main.run(null, workDir, new Set<string>(), null, null, 'default-type', 'default-scope', false, null, true);
     expect(result.get('has_changes')).toEqual(true);
     expect(result.get('has_breaking_changes')).toEqual(true);
     expect(result.get('commit_types')).toEqual("default-type, feat");
@@ -392,7 +397,7 @@ test('Test conventional commit with defaults && no footer && breaking change', (
 test('Test context', () => {
     setupGit(workDir);
 
-    let result = main.run(context, workDir, new Set<string>(), null, null, null, null, null, false);
+    let result = main.run(context, workDir, new Set<string>(), null, null, null, null, null, null, false);
     //PAYLOAD
     expect(result.get('context_ref')).toEqual(context.payload.ref);
     expect(result.get('context_workflow_file')).toEqual(context.payload.workflow);
@@ -442,7 +447,7 @@ test('Test null to empty', () => {
     setupGit(workDir);
     fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
 
-    let result = main.run(null, workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null, true);
+    let result = main.run(null, workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null, null, true);
     expect(result.get('tag-fallback')).toEqual("");
     expect(result.get('tag_latest')).toEqual("");
     expect(result.get('sha_latest')).toEqual("");
@@ -463,7 +468,7 @@ test('Test changeTypes', () => {
 
     for (const [key, value] of Object.entries(reverseChangeTypes)) {
         commitFile(`${value[0]}.txt`, `${value[0]}: conventional commit`);
-        let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, true);
+        let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, true, null);
         expect(result.get('change_type')).toEqual(value[1]);
     }
 });
@@ -475,8 +480,8 @@ function commitFile(name: string, message: string) {
 }
 
 function setupGit(workDir: PathOrFileDescriptor) {
-    cmd(workDir,"git config init.defaultBranch main");
-    cmd(workDir,"git config --global init.defaultBranch main");
+    cmd(workDir, "git config init.defaultBranch main");
+    cmd(workDir, "git config --global init.defaultBranch main");
     cmd(workDir, 'git init');
     cmd(workDir, 'git checkout -b main');
     cmd(workDir, 'git config --file .git/config user.email "kira@yuna.berlin"');

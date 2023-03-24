@@ -7,10 +7,11 @@ import {
     getTicketNumbers,
     isEmpty,
     LINE_SEPARATOR,
-    LINE_SPLIT_REGEX,
+    LINE_SPLIT_REGEX, orderByChangeType,
     replaceNullWithEmptyMap,
-    ResultType,
+    ResultType, separateWith,
     sortMap,
+    strShort,
     toCommitMessages,
     toSemanticCommit
 } from './common_processing';
@@ -60,6 +61,7 @@ try {
     let fallbackCommitType = core.getInput('fallback-commit-type') || null;
     let fallbackCommitScope = core.getInput('fallback-commit-scope') || null;
     let commitMsgWithFooter = core.getInput('commit-msg-with-footer') || null;
+    let maxChangeLogLength = core.getInput('max-changelog-length') || null;
     let nullToEmpty = core.getInput('null-to-empty') || null;
     let workspace = process.env['GITHUB_WORKSPACE']?.toString() || null;
     if (!workDir || workDir === ".") {
@@ -75,6 +77,7 @@ try {
         !isEmpty(fallbackCommitType) ? fallbackCommitType : "",
         !isEmpty(fallbackCommitScope) ? fallbackCommitScope : "",
         !isEmpty(commitMsgWithFooter) ? commitMsgWithFooter.toLowerCase() === 'true' : true,
+        !isEmpty(maxChangeLogLength) ? parseInt(maxChangeLogLength) || -1 : -1,
         !isEmpty(nullToEmpty) ? nullToEmpty.toLowerCase() === 'true' : true
     );
     result.set('GITHUB_WORKSPACE', workspace || null);
@@ -101,6 +104,7 @@ function run(
     fallbackCommitType: string,
     fallbackCommitScope: string,
     commitMsgWithFooter: boolean,
+    maxChangelogLength: number,
     nullToEmpty: boolean
 ): Map<string, ResultType> {
     //DEFAULTS
@@ -132,7 +136,7 @@ function run(
 
     addChanges(ignoreFiles, workDir, result);
     addAheadBehind(workDir, result);
-    addSemCommits(result, workDir, fallbackCommitType, fallbackCommitScope, commitMsgWithFooter);
+    addSemCommits(result, workDir, fallbackCommitType, fallbackCommitScope, commitMsgWithFooter, maxChangelogLength);
     return sortMap(nullToEmpty ? replaceNullWithEmptyMap(result) : result);
 }
 
@@ -161,7 +165,7 @@ function addChanges(ignoreFiles: Set<string>, workDir: PathOrFileDescriptor, res
     result.set('x_language_list', languages.join(', '));
 }
 
-function addSemCommits(result: Map<string, ResultType>, workDir: PathOrFileDescriptor, fallbackCommitType: string, fallbackCommitScope: string, commitMsgWithFooter: boolean) {
+function addSemCommits(result: Map<string, ResultType>, workDir: PathOrFileDescriptor, fallbackCommitType: string, fallbackCommitScope: string, commitMsgWithFooter: boolean, maxChangeLogLength: number) {
     if (result.get("has_changes") === true) {
         let commits = toCommitMessages(cmd(workDir, 'git log ' + result.get('sha_latest_tag') + '..' + result.get('sha_latest')))
             .map(commit => toSemanticCommit(commit[3], fallbackCommitType, fallbackCommitScope, commitMsgWithFooter));
@@ -182,33 +186,33 @@ function addSemCommits(result: Map<string, ResultType>, workDir: PathOrFileDescr
                 scopeMap.set(commit[1], message);
             }
         });
-        setSemCommits(result, typeMap, scopeMap, hasBreakingChange);
+        setSemCommits(result, typeMap, scopeMap, hasBreakingChange, maxChangeLogLength);
     } else if (result.get("has_local_changes") === true) {
         result.set('ticket_numbers', null);
-        setSemCommits(result, new Map<string, string[]>([["chore", [""]]]), new Map<string, string[]>([["maintenance", ['']]]), false);
+        setSemCommits(result, new Map<string, string[]>([["chore", [""]]]), new Map<string, string[]>([["maintenance", ['']]]), false, maxChangeLogLength);
     } else {
         result.set('has_breaking_changes', false);
-        ['commit_types', 'commit_scopes', 'change_type', 'ticket_numbers'].forEach(key => {
+        ['commit_types', 'commit_scopes', 'change_type', 'ticket_numbers', 'change_log'].forEach(key => {
             result.set(key, null);
         });
     }
 }
 
-function setSemCommits(result: Map<string, ResultType>, typeMap: Map<string, string[]>, scopeMap: Map<string, string[]>, hasBreakingChange: boolean) {
+function setSemCommits(result: Map<string, ResultType>, typeMap: Map<string, string[]>, scopeMap: Map<string, string[]>, hasBreakingChange: boolean, maxChangeLogLength: number) : void {
+    let typeMapOrdered = orderByChangeType(typeMap);
     result.set('commit_types', Array.from(sortMap(typeMap).keys()).join(', '));
     result.set('commit_scopes', Array.from(sortMap(scopeMap).keys()).join(', '));
     result.set('has_breaking_changes', hasBreakingChange);
-    typeMap.forEach((value, key) => {
-        //TODO: max changelog length
-        result.set('commit_type_' + key, value.join(`. ${LINE_SEPARATOR}`));
+    typeMapOrdered.forEach((values, key) => {
+        result.set('change_log_type_' + key, strShort(separateWith(values, `. ${LINE_SEPARATOR}`), maxChangeLogLength));
     });
-    scopeMap.forEach((value, key) => {
-        //TODO: max changelog length
-        result.set('commit_scope_' + key, value.join(`. ${LINE_SEPARATOR}`));
+    scopeMap.forEach((values, key) => {
+        result.set('change_log_scope_' + key, strShort(separateWith(values, `. ${LINE_SEPARATOR}`), maxChangeLogLength));
     });
-    //TODO: normal changelog without semver commit?
 
-    const keys = Array.from(typeMap.keys());
+    result.set('change_log', strShort(Array.from(typeMapOrdered.values()).map(values => separateWith(values, `. ${LINE_SEPARATOR}`)).filter(val => !isEmpty(val)).join(`. ${LINE_SEPARATOR}`), maxChangeLogLength));
+
+    const keys = Array.from(typeMapOrdered.keys());
     result.set('change_type', hasBreakingChange ? 'major' : CHANGE_TYPES.find(([key, _]) => keys.includes(key))?.[1] || null);
 }
 
