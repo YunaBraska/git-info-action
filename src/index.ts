@@ -57,10 +57,10 @@ try {
     let ignoreFilesStr = core.getInput('ignore-files') || null;
     let branchFallback = core.getInput('branch-fallback') || null;
     let tagFallback = core.getInput('tag-fallback') || null;
-    let fallbackCommitType = core.getInput('fallback-commit-type');
-    let fallbackCommitScope = core.getInput('fallback-commit-scope');
-    let commitMsgWithFooter = core.getInput('commit-msg-with-footer');
-    let nullToEmpty = core.getInput('null-to-empty');
+    let fallbackCommitType = core.getInput('fallback-commit-type') || null;
+    let fallbackCommitScope = core.getInput('fallback-commit-scope') || null;
+    let commitMsgWithFooter = core.getInput('commit-msg-with-footer') || null;
+    let nullToEmpty = core.getInput('null-to-empty') || null;
     let workspace = process.env['GITHUB_WORKSPACE']?.toString() || null;
     if (!workDir || workDir === ".") {
         workDir = getWorkingDirectory(workspace);
@@ -114,6 +114,7 @@ function run(
     result.set('fallback-commit-type', fallbackCommitType);
     result.set('fallback-commit-scope', fallbackCommitScope);
     result.set('commit-msg-with-footer', commitMsgWithFooter);
+    result.set('null-to-empty', nullToEmpty);
     result.set('ticket_numbers', "");
     result.set('has_breaking_changes', false);
     result.set("commit_types", "");
@@ -136,7 +137,7 @@ function run(
 }
 
 
-function addAheadBehind(workDir: string | Buffer | URL | number, result: Map<string, ResultType>) {
+function addAheadBehind(workDir: PathOrFileDescriptor | number, result: Map<string, ResultType>) {
     let aheadBehind = cmd(workDir, 'git rev-list --count --left-right ' + result.get('branch') + '...' + result.get('branch_default'));
     let ahead = isEmpty(aheadBehind) ? null : aheadBehind?.split(/\s/)[0].trim();
     let behind = isEmpty(aheadBehind) ? null : aheadBehind?.split(/\s/)[1].trim();
@@ -144,7 +145,7 @@ function addAheadBehind(workDir: string | Buffer | URL | number, result: Map<str
     result.set('commits_behind', parseInt(behind || '0'));
 }
 
-function addChanges(ignoreFiles: Set<string>, workDir: string | Buffer | URL | number, result: Map<string, ResultType>) {
+function addChanges(ignoreFiles: Set<string>, workDir: PathOrFileDescriptor, result: Map<string, ResultType>) {
     let gitStatus = cmd(workDir, 'git status --porcelain');
     let changedFiles = toFilesSet(ignoreFiles, cmd(workDir, 'git diff ' + result.get('sha_latest') + ' ' + result.get('sha_latest_tag') + ' --name-only'));
     let changedLocalFiles = toFilesSet(ignoreFiles, gitStatus);
@@ -160,13 +161,12 @@ function addChanges(ignoreFiles: Set<string>, workDir: string | Buffer | URL | n
     result.set('x_language_list', languages.join(', '));
 }
 
-function addSemCommits(result: Map<string, ResultType>, workDir: string | Buffer | URL | number, fallbackCommitType: string, fallbackCommitScope: string, commitMsgWithFooter: boolean) {
-    if (result.get("has_changes")) {
+function addSemCommits(result: Map<string, ResultType>, workDir: PathOrFileDescriptor, fallbackCommitType: string, fallbackCommitScope: string, commitMsgWithFooter: boolean) {
+    if (result.get("has_changes") === true) {
         let commits = toCommitMessages(cmd(workDir, 'git log ' + result.get('sha_latest_tag') + '..' + result.get('sha_latest')))
             .map(commit => toSemanticCommit(commit[3], fallbackCommitType, fallbackCommitScope, commitMsgWithFooter));
         let hasBreakingChange = commits.some(([_, __, breakingChange]) => !isEmpty(breakingChange) ? breakingChange.toLowerCase() === 'true' : false);
         result.set("ticket_numbers", getTicketNumbers(commits).join(', '));
-        result.set("has_breaking_changes", hasBreakingChange);
 
         let typeMap = new Map<string, string[]>();
         let scopeMap = new Map<string, string[]>();
@@ -182,20 +182,34 @@ function addSemCommits(result: Map<string, ResultType>, workDir: string | Buffer
                 scopeMap.set(commit[1], message);
             }
         });
-        result.set("commit_types", Array.from(sortMap(typeMap).keys()).join(', '));
-        result.set("commit_scopes", Array.from(sortMap(scopeMap).keys()).join(', '));
-        typeMap.forEach((value, key) => {
-            result.set("commit_type_" + key, value.join(`. ${LINE_SEPARATOR}`));
+        setSemCommits(result, typeMap, scopeMap, hasBreakingChange);
+    } else if (result.get("has_local_changes") === true) {
+        result.set('ticket_numbers', null);
+        setSemCommits(result, new Map<string, string[]>([["chore", [""]]]), new Map<string, string[]>([["maintenance", ['']]]), false);
+    } else {
+        result.set('has_breaking_changes', false);
+        ['commit_types', 'commit_scopes', 'change_type', 'ticket_numbers'].forEach(key => {
+            result.set(key, null);
         });
-        scopeMap.forEach((value, key) => {
-            result.set("commit_scope_" + key, value.join(`. ${LINE_SEPARATOR}`));
-        });
-
-        const keys = Array.from(typeMap.keys());
-        result.set("change_type", hasBreakingChange ? 'major' : CHANGE_TYPES.find(([key, _]) => keys.includes(key))?.[1] || null);
-
-        sortMap(typeMap).keys();
     }
+}
+
+function setSemCommits(result: Map<string, ResultType>, typeMap: Map<string, string[]>, scopeMap: Map<string, string[]>, hasBreakingChange: boolean) {
+    result.set('commit_types', Array.from(sortMap(typeMap).keys()).join(', '));
+    result.set('commit_scopes', Array.from(sortMap(scopeMap).keys()).join(', '));
+    result.set('has_breaking_changes', hasBreakingChange);
+    typeMap.forEach((value, key) => {
+        //TODO: max changelog length
+        result.set('commit_type_' + key, value.join(`. ${LINE_SEPARATOR}`));
+    });
+    scopeMap.forEach((value, key) => {
+        //TODO: max changelog length
+        result.set('commit_scope_' + key, value.join(`. ${LINE_SEPARATOR}`));
+    });
+    //TODO: normal changelog without semver commit?
+
+    const keys = Array.from(typeMap.keys());
+    result.set('change_type', hasBreakingChange ? 'major' : CHANGE_TYPES.find(([key, _]) => keys.includes(key))?.[1] || null);
 }
 
 function toFilesSet(ignoreFiles: Set<string>, changesLog: string | null): Set<string> {

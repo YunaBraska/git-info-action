@@ -9,30 +9,36 @@ export const TICKET_PATTERN = /(\w*)-\d+|#\d+/mgi;
 export const LINE_SPLIT_REGEX = /\r?\n|\r/g;
 export const CHANGE_TYPES = [
     ['major', 'major'],
+    ['majors', 'major'],
     ['fix', 'patch'],
     ['fixs', 'patch'],
     ['patch', 'patch'],
+    ['patchs', 'patch'],
     ['refactor', 'minor'],
     ['feats', 'minor'],
     ['feat', 'minor'],
     ['minor', 'minor'],
     ['build', 'rc'],
+    ['builds', 'rc'],
     ['rc', 'rc'],
     ['ci', 'rc'],
     ['docs', 'rc'],
+    ['doc', 'rc'],
     ['style', 'rc'],
+    ['styles', 'rc'],
     ['perf', 'rc'],
     ['test', 'rc'],
-    ['chore', 'rc']
+    ['tests', 'rc'],
+    ['chore', 'rc'],
+    ['core', 'rc']
 ];
 
 export function str(result: string | number | boolean | null | undefined): string {
     return (result ?? '').toString();
 }
 
-export function isEmpty(input: string | null | undefined): boolean {
-    return !input || input.trim().length === 0;
-
+export function isEmpty(input: string | number | boolean | null | undefined): boolean {
+    return input === null || input === undefined || String(input).trim().length === 0;
 }
 
 export function getTicketNumbers(commits: string[][]): string[] {
