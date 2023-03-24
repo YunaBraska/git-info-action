@@ -67,7 +67,7 @@ variety of programming languages and conventions.
 | tag-fallback           | null    | Fallback if no tag could be found                                      |
 | fallback-commit-type   | ''      | Fallback for commits without type (Conventional Commits)               |
 | fallback-commit-scope  | ''      | Fallback for commits without scope (Conventional Commits)              |
-| commit-msg-with-footer | true    | Include footer from commit messages (Conventional Commits)             |
+| commit-msg-with-footer | false   | Include footer from commit messages (Conventional Commits)             |
 | null-to-empty          | true    | Replaces null values with empty strings                                |
 
 ### Outputs

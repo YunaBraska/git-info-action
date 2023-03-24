@@ -76,7 +76,7 @@ try {
         tagFallback,
         !isEmpty(fallbackCommitType) ? fallbackCommitType : "",
         !isEmpty(fallbackCommitScope) ? fallbackCommitScope : "",
-        !isEmpty(commitMsgWithFooter) ? commitMsgWithFooter.toLowerCase() === 'true' : true,
+        !isEmpty(commitMsgWithFooter) ? commitMsgWithFooter.toLowerCase() === 'true' : false,
         !isEmpty(maxChangeLogLength) ? parseInt(maxChangeLogLength) || -1 : -1,
         !isEmpty(nullToEmpty) ? nullToEmpty.toLowerCase() === 'true' : true
     );
