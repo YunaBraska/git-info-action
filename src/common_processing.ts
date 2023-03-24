@@ -14,10 +14,10 @@ export const CHANGE_TYPES = [
     ['fixs', 'patch'],
     ['patch', 'patch'],
     ['patchs', 'patch'],
-    ['refactor', 'minor'],
-    ['feats', 'minor'],
     ['feat', 'minor'],
+    ['feats', 'minor'],
     ['minor', 'minor'],
+    ['refactor', 'minor'],
     ['build', 'rc'],
     ['builds', 'rc'],
     ['rc', 'rc'],
@@ -35,6 +35,26 @@ export const CHANGE_TYPES = [
 
 export function str(result: string | number | boolean | null | undefined): string {
     return (result ?? '').toString();
+}
+
+export function strShort(input: string, cutAt: number): string {
+    input = input.trim();
+    let threshold = input.endsWith('.') ? 2 : 3;
+    if (cutAt > threshold && input.length > (cutAt - threshold)) {
+        return input.substring(0, (cutAt - threshold)) + ".".repeat(threshold);
+    } else {
+        return input;
+    }
+}
+
+export function separateWith(values: string[], sep: string): string {
+    return values
+        .filter(val => !isEmpty(val))
+        .map(val => val.endsWith('.') ? val.slice(0, -1) : val)
+        .filter(val => !isEmpty(val))
+        .map(val => val.trim())
+        .filter((val, index, arr) => arr.indexOf(val) === index)
+        .join(sep);
 }
 
 export function isEmpty(input: string | number | boolean | null | undefined): boolean {
@@ -148,4 +168,24 @@ export function execCmd(workDir: PathOrFileDescriptor, logError: boolean, comman
         }
     }
     return null;
+}
+
+export function orderByChangeType(typeMap: Map<string, string[]>): Map<string, string[]> {
+    const orderedMap: Map<string, string[]> = new Map();
+
+    // Add all keys from CHANGE_TYPES in order
+    for (const [key, value] of CHANGE_TYPES) {
+        if (typeMap.has(key)) {
+            orderedMap.set(key, typeMap.get(key)!);
+        }
+    }
+
+    // Add any remaining keys
+    for (const [key, value] of typeMap) {
+        if (!orderedMap.has(key)) {
+            orderedMap.set(key, value);
+        }
+    }
+
+    return orderedMap;
 }
