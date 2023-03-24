@@ -33,6 +33,10 @@ inputs:
     description: 'converts null to empty string'
     required: false
     default: 'true'
+  max-changelog-length:
+    description: 'adds a limit to all change logs (useful when using e.g. twitter)'
+    required: false
+    default: ''
 outputs:
   branch:
     description: 'current branch'

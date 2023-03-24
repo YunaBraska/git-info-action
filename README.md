@@ -34,6 +34,7 @@ variety of programming languages and conventions.
     fallback-commit-type: 'chore'
     fallback-commit-scope: 'performance'
     commit-msg-with-footer: 'true'
+    max-changelog-length: 200
 
   # PRINT
 - name: "Print Git Info"

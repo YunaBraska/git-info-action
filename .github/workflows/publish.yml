@@ -54,6 +54,8 @@ jobs:
           npm ci && npm run test:coverage
       - name: "Read Git Info"
         id: "git_info"
+        with:
+          max-changelog-length: 200
         uses: YunaBraska/git-info-action@main
       - name: "Get Semver Info [${{steps.git_info.outputs.tag_latest}}]"
         id: "semver_info"
