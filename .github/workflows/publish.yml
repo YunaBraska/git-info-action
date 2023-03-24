@@ -1,115 +1,23 @@
-name: "RELEASE"
+name: "PUBLISH"
 
 on:
+  schedule:
+    - cron: "0 8 * * *"
   workflow_dispatch:
     inputs:
       ref:
         type: string
         description: "[ref] e.g. branch, tag or commit to checkout [default: github.ref_name || github.head_ref ]"
         required: false
-      semver_strategy:
-        type: string
-        description: "[semver_strategy] e.g. major,minor,patch,rc,meta [default: patch]"
-        required: false
-  schedule:
-    - cron: "0 8 * * *"
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
-    # Map the job outputs to step outputs
-    outputs:
-      semver: ${{ steps.git.outputs.semver }}
-      new_version: ${{ steps.semver_info.outputs.clean_semver }}
-    steps:
-      - name: "Read Input"
-        id: "inputs"
-        run: |
-          echo "--------------------- REF ----------------------"
-          ref_default=${{ github.ref_name || github.head_ref }}
-          ref="${ref_in:-${ref_default}}"
-          echo "ref=$ref" >> $GITHUB_OUTPUT
-          echo "--------------------- ENVS ---------------------"
-          env
-        env:
-          ref_in: ${{ inputs.ref }}
-      - name: "Checkout [${{steps.inputs.outputs.ref}}]"
-        uses: actions/checkout@main
-        with:
-          fetch-depth: 500
-          ref: ${{ steps.inputs.outputs.ref }}
-          token: ${{ secrets.CI || secrets.CI_TOKEN_WORKFLOW || github.token }}
-      - name: "Setup Node [16]"
-        uses: actions/setup-node@main
-        with:
-          node-version: "16"
-          cache: npm
-      - name: "update dependencies"
-        run: |
-          npm outdated || true
-          npm update --save
-          npm audit fix --force
-      - name: "Run Tests"
-        run: |
-          npm ci && npm run test:coverage
-      - name: "Read Git Info"
-        id: "git_info"
-        with:
-          max-changelog-length: 200
-        uses: YunaBraska/git-info-action@main
-      - name: "Get Semver Info [${{steps.git_info.outputs.tag_latest}}]"
-        id: "semver_info"
-        uses: YunaBraska/semver-info-action@main
-        with:
-          semver-a: ${{ steps.git_info.outputs.tag_latest }}
-          semver-b: ${{ steps.git_info.outputs.tag_latest }}
-          increase-a: ${{ inputs.semver_strategy || 'patch' }}
-      - name: "Write Version.txt [${{steps.semver_info.outputs.clean_semver}}]"
-        if: steps.semver_info.outputs.version_txt_path != '' || steps.semver_info.outputs.version_txt_path == 'null'
-        run: |
-          echo "version [${{ steps.semver_info.outputs.clean_semver }}]"
-          echo "${{steps.semver_info.outputs.clean_semver}}" > "${{steps.semver_info.outputs.version_txt_path}}"
-      - name: "Push changes [${{steps.semver_info.outputs.clean_semver}}]"
-        if: steps.git_info.outputs.has_changes == 'true' || steps.git_info.outputs.has_local_changes == 'true'
-        uses: stefanzweifel/git-auto-commit-action@master
-        with:
-          commit_message: "chore: 🏷️ new version [${{ steps.semver_info.outputs.clean_semver }}]"
-          commit_user_name: "Kira"
-          commit_user_email: "kira@yuna.berlin"
-          commit_author: "Kira <kira@yuna.berlin>"
-          tagging_message: ${{ steps.semver_info.outputs.clean_semver }}
-          skip_dirty_check: true
-          skip_fetch: true
-          skip_checkout: true
-          disable_globbing: true
-          create_branch: false
-      - name: "Create GitHub Release"
-        if: steps.git_info.outputs.has_changes == 'true' || steps.git_info.outputs.has_local_changes == 'true'
-        uses: ncipollo/release-action@main
-        with:
-          makeLatest: true
-          generateReleaseNotes: true
-          body: ${{ steps.git_info.outputs.commit_type_feat }}
-          tag: ${{ steps.semver_info.outputs.clean_semver }}
-          token: ${{ secrets.CI || secrets.CI_TOKEN_WORKFLOW || github.token }}
-      - name: "Publish code quality"
-        uses: paambaati/codeclimate-action@v3.2.0
-        if: |
-          env.CC_TEST_REPORTER_ID != '' &&
-          (steps.git_info.outputs.has_changes == 'true' || steps.git_info.outputs.has_local_changes == 'true')
-        env:
-          CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
-        with:
-          coverageLocations: ${{github.workspace}}/coverage/*.lcov:lcov
-      - name: "Send toot to Mastodon"
-        if: |
-          env.MASTODON_ACCESS_TOKEN != '' &&
-          steps.git_info.outputs.commit_type_feat != '' &&
-          (steps.git_info.outputs.has_changes == 'true' || steps.git_info.outputs.has_local_changes == 'true')
-        uses: cbrgm/mastodon-github-action@main
-        with:
-          message: "${{steps.git_info.outputs.repo_name}} ${{steps.semver_info.outputs.clean_semver}} 🎉 ${{steps.git_info.outputs.commit_type_feat}} Try it out! https://github.com/marketplace/actions/${{steps.git_info.outputs.repo_name}} #GitHubActions #git #workflow #github #githubactions #githubaction @github"
-          visibility: "public" # default: public
-        env:
-          MASTODON_URL: https://hachyderm.io
-          MASTODON_ACCESS_TOKEN: ${{ secrets.MASTODON_ACCESS_TOKEN }} # access token
+  publish_node:
+    name: "Node Update & Test & Publish"
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_node_publish.yml@main
+    with:
+      ref: ${{ inputs.ref || github.ref_name || github.head_ref }}
+      mastodon_suffix: '#GitHubActions #java #maven #gradle #workflow #github #githubactions #githubaction @github'
+    secrets:
+      CI_WORKFLOW_TOKEN: ${{ secrets.CI_TOKEN_WORKFLOW || secrets.CI_TOKEN || github.token }}
+      CC_TEST_REPORTER_ID: ${{secrets.CC_TEST_REPORTER_ID}}
+      MASTODON_ACCESS_TOKEN: ${{secrets.MASTODON_ACCESS_TOKEN}}
