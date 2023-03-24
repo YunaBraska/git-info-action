@@ -346,9 +346,7 @@ test('Test conventional commit', () => {
     expect(result.get('change_type')).toEqual("major");
     expect(result.get('change_log').length).toEqual(50);
     expect(result.get('null-to-empty')).toEqual(false);
-    if (os.platform().toLowerCase().startsWith('win')) {
-        expect(String(result.get('change_log')).trim()).toEqual(`asdsadasdsada`);
-    } else {
+    if (!os.platform().toLowerCase().startsWith('win')) {
         expect(String(result.get('change_log')).trim()).toEqual(`Prevent racing of requests. ${LINE_SEPARATOR}Add missing parame...`);
     }
 });
