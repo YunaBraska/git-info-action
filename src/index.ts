@@ -7,15 +7,18 @@ import {
     getTicketNumbers,
     isEmpty,
     LINE_SEPARATOR,
-    LINE_SPLIT_REGEX, orderByChangeType,
+    LINE_SPLIT_REGEX,
+    orderByChangeType,
     replaceNullWithEmptyMap,
-    ResultType, separateWith,
+    ResultType,
+    separateWith,
     sortMap,
     strShort,
     toCommitMessages,
     toSemanticCommit
 } from './common_processing';
 import {addContext} from './context_processor';
+import {updateBadges} from "./badges_shield_updater";
 
 const fs = require('fs');
 const core = require('@actions/core');
@@ -137,6 +140,7 @@ function run(
     addChanges(ignoreFiles, workDir, result);
     addAheadBehind(workDir, result);
     addSemCommits(result, workDir, fallbackCommitType, fallbackCommitScope, commitMsgWithFooter, maxChangelogLength);
+    updateBadges(result, workDir, -1);
     return sortMap(nullToEmpty ? replaceNullWithEmptyMap(result) : result);
 }
 
@@ -198,7 +202,7 @@ function addSemCommits(result: Map<string, ResultType>, workDir: PathOrFileDescr
     }
 }
 
-function setSemCommits(result: Map<string, ResultType>, typeMap: Map<string, string[]>, scopeMap: Map<string, string[]>, hasBreakingChange: boolean, maxChangeLogLength: number) : void {
+function setSemCommits(result: Map<string, ResultType>, typeMap: Map<string, string[]>, scopeMap: Map<string, string[]>, hasBreakingChange: boolean, maxChangeLogLength: number): void {
     let typeMapOrdered = orderByChangeType(typeMap);
     result.set('commit_types', Array.from(sortMap(typeMap).keys()).join(', '));
     result.set('commit_scopes', Array.from(sortMap(scopeMap).keys()).join(', '));

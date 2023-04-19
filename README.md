@@ -17,6 +17,10 @@ variety of programming languages and conventions.
 ![Label][label_shield]
 ![Label][node_version]
 
+### Features
+
+* update Shields/Badges see [ShieldsDemo](./ShieldDemo.md)
+
 ## Usage
 
 ```yaml

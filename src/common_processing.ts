@@ -1,5 +1,7 @@
 import {PathOrFileDescriptor} from "fs";
 import os from "os";
+import path from "path";
+import * as fs from "fs";
 
 export type ResultType = string | number | boolean | null;
 
@@ -35,6 +37,33 @@ export const CHANGE_TYPES = [
 
 export function str(result: string | number | boolean | null | undefined): string {
     return (result ?? '').toString();
+}
+
+export function int(result: string | number | boolean | null | undefined): number {
+    if (typeof result === 'number') {
+        return result;
+    } else if (typeof result === 'string') {
+        const parsedInt = Number.parseInt(result, 10);
+        if (Number.isNaN(parsedInt)) {
+            return 0;
+        }
+        return parsedInt;
+    } else {
+        return 0;
+    }
+}
+
+export function formatSizeUnits(bytes: number): string {
+    const units = ['b', 'kb', 'mb', 'gb', 'tb', 'pb', 'eb', 'zb', 'yb'];
+    let index = 0;
+    let size = bytes;
+
+    while (size >= 1024 && index < units.length - 1) {
+        size /= 1024;
+        index++;
+    }
+
+    return `${size.toFixed(2)} ${units[index]}`;
 }
 
 export function strShort(input: string, cutAt: number): string {
@@ -188,4 +217,21 @@ export function orderByChangeType(typeMap: Map<string, string[]>): Map<string, s
     }
 
     return orderedMap;
+}
+
+export function listFiles(dir: PathOrFileDescriptor, deep: number, filter: string, resultList: PathOrFileDescriptor[], deep_current: number): PathOrFileDescriptor[] {
+    deep_current = deep_current || 0
+    resultList = resultList || []
+    if (deep > -1 && deep_current > deep) {
+        return resultList;
+    }
+    const files = fs.readdirSync(dir.toString(), {withFileTypes: true});
+    for (const file of files) {
+        if (file.isDirectory()) {
+            listFiles(path.join(dir.toString(), file.name), deep, filter, resultList, deep_current++);
+        } else if (!filter || new RegExp(filter).test(file.name)) {
+            resultList.push(path.join(dir.toString(), file.name));
+        }
+    }
+    return resultList;
 }

@@ -74,6 +74,11 @@ afterEach(() => {
     removeDir(workDir);
 });
 
+afterAll(() => {
+    // Update shield demo
+    main.run(null, path.join(process.cwd()), new Set<string>(), null, null, null, null, null, null, false);
+});
+
 test('Test isEmpty', () => {
     expect(isEmpty(null)).toEqual(true);
     expect(isEmpty(undefined)).toEqual(true);
