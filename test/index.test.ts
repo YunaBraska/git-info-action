@@ -280,6 +280,7 @@ test('Test with ignore files', () => {
     expect(result.get('sha_latest_tag')).toEqual(null);
     expect(result.get('has_changes')).toEqual(false);
     expect(result.get('has_local_changes')).toEqual(true);
+    expect(result.get('file_changes_local')).toEqual('howdy.py');
     expect(result.get('commits_ahead')).toEqual(0);
     expect(result.get('commits_behind')).toEqual(0);
     expect(result.get('null-to-empty')).toEqual(false);
@@ -344,6 +345,7 @@ test('Test conventional commit', () => {
 
     let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, 50, false);
     expect(result.get('has_changes')).toEqual(true);
+    expect(result.get('file_changes')).toEqual('aa.txt, bb.txt, cc.txt, dd.txt, ee.txt, ff.txt, gg.txt, hh.txt, ii.txt, jj.txt, kk.txt, ll.txt, mm.txt, nn.txt, oo.txt, pp.txt, qq.txt');
     expect(result.get('has_breaking_changes')).toEqual(true);
     expect(result.get('commit_types')).toEqual("build, chore, docs, feat, fix, hi, refactor, style");
     expect(result.get('commit_scopes')).toEqual("api, lang, shopping cart");

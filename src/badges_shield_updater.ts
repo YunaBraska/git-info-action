@@ -1,4 +1,4 @@
-import {readFileSync, writeFileSync} from "fs";
+import {PathOrFileDescriptor, readFileSync, writeFileSync} from "fs";
 import {formatSizeUnits, int, isEmpty, listFiles, ResultType, str} from './common_processing';
 
 const REGEX_BADGE_GENERIC = /!\[c_(.*?)]\s*\(.*\/badge\/(.*?)(\?.*?)?\)/mg;
@@ -81,7 +81,7 @@ export function updateBadges(result: Map<string, ResultType>, workDir: string | 
         let content = str(fileContentOrg);
         content = content.replace(REGEX_BADGE_GENERIC, (match, key, link) => {
             // Get the value from the result map based on the captured key
-            return updateLink(key, clearKeyOrValue(str(result.get(key))), match, str(link));
+            return updateLink(file, key, clearKeyOrValue(str(result.get(key))), match, str(link));
         });
 
         // Write the updated content back to the file
@@ -91,7 +91,7 @@ export function updateBadges(result: Map<string, ResultType>, workDir: string | 
     });
 }
 
-function updateLink(key: string, value: string, match: string, link: string) {
+function updateLink(file: PathOrFileDescriptor, key: string, value: string, match: string, link: string) {
     if (key === 'repo_size') {
         value = value + ' ' + formatSizeUnits(int(value));
     }
@@ -100,6 +100,7 @@ function updateLink(key: string, value: string, match: string, link: string) {
     if (isEmpty(value)) {
         value = 'not_available';
         color = red;
+        console.warn(`Badges/Shields Updater: key [${key}] does not match any output variable. File [${file}]`)
     } else {
         color = orange;
         color = setColor(key, value, isEmpty(color) ? orange : color);

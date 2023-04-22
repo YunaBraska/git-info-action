@@ -96,6 +96,8 @@ variety of programming languages and conventions.
 | change_log                  | "Added ShopButton. Changed Logo"                                | null    | Full Change Log (Conventional Commits)                                                    |
 | change_log_type_\<type>     | "Added ShopButton."                                             | -       | Change Log for the given type (Conventional Commits)                                      |
 | change_log_scope_\<scope>   | "Changed Logo"                                                  | -       | Change Log for the given scope (Conventional Commits)                                     |
+| file_changes                | "file.txt, json.js"                                             | ''      | List of local file changes                                                                |
+| file_changes_local          | "file.txt, json.js"                                             | ''      | List of file changes (sha_latest <> sha_latest_tag)                                       |
 | x_has_changes_\<lang>       | true                                                            | false   | true on file changes exists between current sha and latest tag                            |
 | x_has_local_changes_\<lang> | true                                                            | false   | true if there are changes on non committed files for the specific language                |
 | x_language_list             | "go, html, css, java, js, json, md, php, python, yaml"          | -       | A list of supported languages for `x_has_changes_<lang>` and `x_has_local_changes_<lang>` |

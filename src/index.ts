@@ -128,7 +128,7 @@ function run(
     result.set("commit_scopes", "");
     addContext(result, context);
 
-    cmd(workDir, 'git fetch --all --tags');
+    cmd(workDir, 'git fetch --all --tags --depth=100');
     result.set('is_git_repo', !isEmpty(cmd(workDir, 'git rev-parse --is-inside-work-tree', 'git rev-parse --git-dir')));
     result.set('branch', deleteBranchPrefix(context?.payload?.ref || context?.ref || cmd(workDir, 'git branch --show-current', 'git branch --show', 'git rev-parse --abbrev-ref HEAD', 'git rev-parse --abbrev-ref --symbolic-full-name @{u}')));
     result.set('branch_default', context?.repository?.default_branch || getDefaultBranch(workDir, branchFallback));
@@ -158,6 +158,8 @@ function addChanges(ignoreFiles: Set<string>, workDir: PathOrFileDescriptor, res
     let changedFiles = toFilesSet(ignoreFiles, cmd(workDir, 'git diff ' + result.get('sha_latest') + ' ' + result.get('sha_latest_tag') + ' --name-only'));
     let changedLocalFiles = toFilesSet(ignoreFiles, gitStatus);
     result.set('has_local_changes', changedLocalFiles && changedLocalFiles.size > 0);
+    result.set('file_changes', Array.from(changedFiles).join(', '));
+    result.set('file_changes_local', Array.from(changedLocalFiles).join(', '));
     fileEndingsMap.forEach((fileEndings, language) => {
         result.set('x_has_local_changes_' + language.toLowerCase(), hasFileEnding(changedLocalFiles, fileEndings));
     });
@@ -227,7 +229,7 @@ function toFilesSet(ignoreFiles: Set<string>, changesLog: string | null): Set<st
     }
     for (const line of changesLog.split(LINE_SPLIT_REGEX)) {
         if (!isEmpty(line) && line.includes('.')) {
-            result.add(line.trim());
+            result.add(line.trim().replace(/^[?ACDMRTUXB]{1,2}\s+/, "").trim());
         }
     }
     return ignoreFiles && ignoreFiles.size > 0

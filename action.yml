@@ -90,6 +90,10 @@ outputs:
     description: 'Change Log for the type revert (Conventional Commits)'
   change_type:
     description: 'Change Type [major, minor, patch, rc] (Conventional Commits)'
+  file_changes:
+    description: 'List of file changes (sha_latest <> sha_latest_tag)'
+  file_changes_local:
+    description: 'List of local file changes'
   x_language_list:
     description: 'a list of supported language for x_has_changes_<lang>'
   event_name:
