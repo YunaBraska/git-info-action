@@ -5,9 +5,7 @@
   "main": "./lib/index.js",
   "scripts": {
     "build": "tsc",
-    "test": "jest --coverage",
-    "test:coverage": "npm test -- --coverage",
-    "pre-checkin": "npm run build && npm test:coverage"
+    "test": "npm run build && jest --coverage"
   },
   "repository": {
     "type": "git",

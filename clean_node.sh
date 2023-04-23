@@ -12,8 +12,6 @@ echo "########## INSTALL UPDATE DEPENDENCIES ##########"
 npm outdated || true
 npm update --save
 npm audit fix --force
-echo "########## BUILD                       ##########"
-npm run build
-echo "########## TEST                        ##########"
-npm run test:coverage
+echo "########## BUILD & TEST                ##########"
+npm run test
 echo "########## DONE                        ##########"

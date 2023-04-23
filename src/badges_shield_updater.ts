@@ -16,6 +16,7 @@ const pink = 'ffc0cb'
 const purple = '9370db'
 
 function setColor(key: string, val: string, color: string): string {
+    key = key.toLowerCase();
     if (key.startsWith('is_')) {
         if (val === 'true') {
             color = green;
@@ -71,6 +72,14 @@ function setColor(key: string, val: string, color: string): string {
         } else if (val.endsWith('b')) {
             color = brightgreen;
         }
+    } else if (key === 'repo_visibility') {
+        if (val.toLowerCase() === 'private') {
+            color = orange;
+        } else if (val.toLowerCase() === 'public') {
+            color = green;
+        } else {
+            color = red;
+        }
     }
     return color;
 }
@@ -87,39 +96,41 @@ export function updateBadges(result: Map<string, ResultType>, workDir: string | 
         // Write the updated content back to the file
         if (content !== fileContentOrg) {
             writeFileSync(file, content, 'utf-8');
+            console.debug(`Saved file [${file}]`)
         }
     });
 }
 
 function updateLink(file: PathOrFileDescriptor, key: string, value: string, match: string, link: string) {
     if (key === 'repo_size') {
-        value = value + ' ' + formatSizeUnits(int(value));
+        value = formatSizeUnits(int(value));
     }
 
     let color: string;
     if (isEmpty(value)) {
-        value = 'not_available';
-        color = red;
-        console.warn(`Badges/Shields Updater: key [${key}] does not match any output variable. File [${file}]`)
+        // value = 'not_available';
+        // color = red;
+        //do not replace anything as it could come from a different action
     } else {
         color = orange;
         color = setColor(key, value, isEmpty(color) ? orange : color);
-    }
-
-    //format key
-    key = clearKeyOrValue(key)
-    key = key === 'repo_star_count' ? 'stars' : key;
-    // Replace the link with the new value
-    if (match.toLowerCase().includes('shields.io')) {
-        return match.replace(link, `${key}-${value}-${color}`);
-    } else if (match.toLowerCase().includes('badgen.net')) {
-        return match.replace(link, `${key}/${value}/${color}`);
+        //format key
+        key = clearKeyOrValue(key)
+        key = key === 'repo_star_count' ? 'stars' : key;
+        // Replace the link with the new value
+        if (match.toLowerCase().includes('shields.io')) {
+            console.debug(`Updated [shields.io] key [${key}] file [${file}]`)
+            return match.replace(link, `${key}-${value}-${color}`);
+        } else if (match.toLowerCase().includes('badgen.net')) {
+            console.debug(`Updated [badgen.net] key [${key}] file [${file}]`)
+            return match.replace(link, `${key}/${value}/${color}`);
+        }
     }
     return match
 }
 
 function clearKeyOrValue(keyOrValue: string): string {
-    return (keyOrValue.toLowerCase().startsWith('x_') ? keyOrValue.substring(2) : keyOrValue).trim().replace(/[^a-zA-Z0-9\\.]/g, '_').replace('__', '_').replace('._', '.');
+    return (keyOrValue.toLowerCase().startsWith('x_') ? keyOrValue.substring(2) : keyOrValue).trim().replace(/[^a-zA-Z0-9\\.\s]/g, '_').replace('__', '_').replace('._', '.');
 }
 
 

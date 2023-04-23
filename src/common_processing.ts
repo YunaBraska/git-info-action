@@ -63,7 +63,7 @@ export function formatSizeUnits(bytes: number): string {
         index++;
     }
 
-    return `${size.toFixed(2)} ${units[index]}`;
+    return `${Math.floor(size)}_${units[index]}`;
 }
 
 export function strShort(input: string, cutAt: number): string {

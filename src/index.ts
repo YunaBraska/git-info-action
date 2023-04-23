@@ -141,6 +141,8 @@ function run(
     addAheadBehind(workDir, result);
     addSemCommits(result, workDir, fallbackCommitType, fallbackCommitScope, commitMsgWithFooter, maxChangelogLength);
     updateBadges(result, workDir, -1);
+    //Twice as 'updateBadges' could also do changes
+    addChanges(ignoreFiles, workDir, result);
     return sortMap(nullToEmpty ? replaceNullWithEmptyMap(result) : result);
 }
 

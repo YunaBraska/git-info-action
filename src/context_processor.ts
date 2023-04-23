@@ -28,7 +28,7 @@ export function addContext(result: Map<string, ResultType>, context: any) {
     result.set('is_repo_archived', context?.payload?.repository?.archived !== undefined ? context.payload.repository.archived : false)
     result.set('is_repo_disabled', context?.payload?.repository?.disabled !== undefined ? context.payload.repository.disabled : false)
     result.set('is_repo_template', context?.payload?.repository?.is_template !== undefined ? context.payload.repository.is_template : false)
-    result.set('repo_visibility', context?.payload?.repository?.visibility || 'PRIVATE')
+    result.set('repo_visibility', context?.payload?.repository?.visibility || 'unknown')
     result.set('repo_default_branch', context?.payload?.repository?.default_branch || null)
     result.set('repo_language', context?.payload?.repository?.language || null)
     result.set('repo_name', context?.payload?.repository?.name || path.basename(process.cwd()))
