@@ -96,6 +96,28 @@ outputs:
     description: 'List of local file changes'
   x_language_list:
     description: 'a list of supported language for x_has_changes_<lang>'
+  context_ref:
+    description: "The git ref of the triggering event"
+  context_workflow_file:
+    description: "The workflow file where the triggering event occurred"
+  context_actor_id:
+    description: "The ID of the user or app that triggered the event"
+  context_actor_name:
+    description: "The name of the user or app that triggered the event"
+  context_actor_type:
+    description: "The type of the user or app that triggered the event"
+  context_sha:
+    description: "The git SHA of the commit that triggered the event"
+  context_event_name:
+    description: "The name of the event that triggered the workflow"
+  context_workflow_name:
+    description: "The name of the workflow that was triggered"
+  context_job_name:
+    description: "The name of the job that was triggered"
+  context_run_id:
+    description: "The ID of the workflow run that was triggered"
+  context_run_number:
+    description: "The number of the workflow run that was triggered"
   event_name:
     description: "The name of the event that triggered the workflow."
   event_source:
