@@ -16,6 +16,7 @@ variety of programming languages and conventions.
 [![Size][size_shield]][size_shield]
 ![Label][label_shield]
 ![Label][node_version]
+[![Licenses](https://img.shields.io/badge/Licenses-065d7c?style=flat-square)](https://github.com/YunaBraska/git-info-action/blob/main/dist/licenses.txt)
 
 ### Features
 
