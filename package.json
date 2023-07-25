@@ -4,10 +4,9 @@
   "description": "Provides git information",
   "main": "./lib/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run package",
     "package": "npx ncc build --source-map --license licenses.txt",
-    "test": "npm run build && jest --coverage",
-    "release": "npm run build && npm run package"
+    "test": "npm run build && jest --coverage"
   },
   "repository": {
     "type": "git",
