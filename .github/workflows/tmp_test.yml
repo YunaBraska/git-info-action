@@ -1,0 +1,31 @@
+name: "TEST"
+
+on:
+  push:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        description: "[ref] e.g. branch, tag or commit to checkout [default: github_ref_name || github_head_ref ]"
+        required: false
+      setup_java:
+        type: string
+        default: 'false'
+        required: false
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+    steps:
+      - name: "Checkout [${{ inputs.ref || github.ref_name || github.head_ref }}]"
+        uses: actions/checkout@main
+        with:
+          ref: ${{ inputs.ref || github.ref_name || github.head_ref }}
+      - name: "Read Git Info"
+        id: "git_info"
+        uses: YunaBraska/git-info-action@feat/ncc-build
+
