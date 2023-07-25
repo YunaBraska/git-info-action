@@ -13,7 +13,6 @@
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
-/dist/
 /nbdist/
 /.nb-gradle/
 /temp
@@ -46,5 +45,6 @@ __pycache__
 /cc-reporter*
 /public-key.asc
 
-node_modules/fsevents/
-node_modules/fsevents/*
+
+lib/
+node_modules

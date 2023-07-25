@@ -1,101 +1,101 @@
-name: 'Git Info Action'
-description: 'Git insights such as latest branch & commit & tag information, ticket number detection, breaking changes...'
+name: "Git Info Action"
+description: "Git insights such as latest branch & commit & tag information, ticket number detection, breaking changes..."
 inputs:
   work-dir:
-    description: 'work dir'
+    description: "work dir"
     required: false
-    default: '.'
+    default: "."
   ignore-files:
     description: 'regex list to ignore files (comma separated) e.g. "/\.txt$/, /\.doc$/"'
     required: false
-    default: 'null'
+    default: "null"
   branch-fallback:
-    description: 'fallback if no branch_default could be found'
+    description: "fallback if no branch_default could be found"
     required: false
-    default: 'main'
+    default: "main"
   tag-fallback:
-    description: 'fallback if no tag could be found'
+    description: "fallback if no tag could be found"
     required: false
-    default: 'null'
+    default: "null"
   fallback-commit-type:
-    description: 'fallback for commits without type (Conventional Commits)'
+    description: "fallback for commits without type (Conventional Commits)"
     required: false
-    default: ''
+    default: ""
   fallback-commit-scope:
-    description: 'fallback for commits without scope (Conventional Commits)'
+    description: "fallback for commits without scope (Conventional Commits)"
     required: false
-    default: ''
+    default: ""
   commit-msg-with-footer:
-    description: 'include footer from commit messages (Conventional Commits)'
+    description: "include footer from commit messages (Conventional Commits)"
     required: false
-    default: 'true'
+    default: "true"
   null-to-empty:
-    description: 'converts null to empty string'
+    description: "converts null to empty string"
     required: false
-    default: 'true'
+    default: "true"
   max-changelog-length:
-    description: 'adds a limit to all change logs (useful when using e.g. twitter)'
+    description: "adds a limit to all change logs (useful when using e.g. twitter)"
     required: false
-    default: ''
+    default: ""
 outputs:
   branch:
-    description: 'current branch'
+    description: "current branch"
   branch_default:
-    description: 'default branch'
+    description: "default branch"
   commits_ahead:
-    description: 'branch commits that are not in the branch_default'
+    description: "branch commits that are not in the branch_default"
   commits_behind:
-    description: 'branch_default commits that are not in the branch'
+    description: "branch_default commits that are not in the branch"
   is_default_branch:
-    description: 'true if branch == branch_default'
+    description: "true if branch == branch_default"
   has_changes:
-    description: 'true if sha_latest != sha_latest_tag'
+    description: "true if sha_latest != sha_latest_tag"
   has_local_changes:
-    description: 'true if there are changes on non committed files'
+    description: "true if there are changes on non committed files"
   has_breaking_changes:
-    description: 'true if a commit has a breaking change (Conventional Commits)'
+    description: "true if a commit has a breaking change (Conventional Commits)"
   sha_latest:
-    description: 'sha from latest commit'
+    description: "sha from latest commit"
   sha_latest_tag:
-    description: 'sha from latest tag'
+    description: "sha from latest tag"
   tag_latest:
-    description: 'latest tag'
+    description: "latest tag"
   ticket_numbers:
-    description: 'list of ticket numbers (Jira  GitHub)'
+    description: "list of ticket numbers (Jira  GitHub)"
   commit_types:
-    description: 'list of commit types (Conventional Commits)'
+    description: "list of commit types (Conventional Commits)"
   commit_scopes:
-    description: 'list of commit scopes (Conventional Commits)'
+    description: "list of commit scopes (Conventional Commits)"
   change_log:
-    description: 'Full changelog'
+    description: "Full changelog"
   change_log_type_chore:
-    description: 'Change Log for the type chore (Conventional Commits)'
+    description: "Change Log for the type chore (Conventional Commits)"
   change_log_type_feat:
-    description: 'Change Log for the type feat (Conventional Commits)'
+    description: "Change Log for the type feat (Conventional Commits)"
   change_log_type_fix:
-    description: 'Change Log for the type fix (Conventional Commits)'
+    description: "Change Log for the type fix (Conventional Commits)"
   change_log_type_ci:
-    description: 'Change Log for the type ci (Conventional Commits)'
+    description: "Change Log for the type ci (Conventional Commits)"
   change_log_type_docs:
-    description: 'Change Log for the type docs (Conventional Commits)'
+    description: "Change Log for the type docs (Conventional Commits)"
   change_log_type_style:
-    description: 'Change Log for the type style (Conventional Commits)'
+    description: "Change Log for the type style (Conventional Commits)"
   change_log_type_refactor:
-    description: 'Change Log for the type refactor (Conventional Commits)'
+    description: "Change Log for the type refactor (Conventional Commits)"
   change_log_type_perf:
-    description: 'Change Log for the type perf (Conventional Commits)'
+    description: "Change Log for the type perf (Conventional Commits)"
   change_log_type_test:
-    description: 'Change Log for the type test (Conventional Commits)'
+    description: "Change Log for the type test (Conventional Commits)"
   change_log_type_revert:
-    description: 'Change Log for the type revert (Conventional Commits)'
+    description: "Change Log for the type revert (Conventional Commits)"
   change_type:
-    description: 'Change Type [major, minor, patch, rc] (Conventional Commits)'
+    description: "Change Type [major, minor, patch, rc] (Conventional Commits)"
   file_changes:
-    description: 'List of file changes (sha_latest <> sha_latest_tag)'
+    description: "List of file changes (sha_latest <> sha_latest_tag)"
   file_changes_local:
-    description: 'List of local file changes'
+    description: "List of local file changes"
   x_language_list:
-    description: 'a list of supported language for x_has_changes_<lang>'
+    description: "a list of supported language for x_has_changes_<lang>"
   context_ref:
     description: "The git ref of the triggering event"
   context_workflow_file:
@@ -173,8 +173,8 @@ outputs:
   repo_owner_type:
     description: "The type of the repository's owner."
 runs:
-  using: 'node16'
-  main: 'lib/index.js'
+  using: "node16"
+  main: "dist/index.js"
 branding:
   icon: file-text
   color: purple
