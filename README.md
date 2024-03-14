@@ -142,7 +142,7 @@ variety of programming languages and conventions.
 * Build: `npm run build` to "compile" `index.ts` to `./lib/index.js`
 * Test: `npm run test`
 * _clean environment: `./clean_node.sh`_
-* NodeJs 16: do not upgrade nodeJs as GitHub actions latest version is 16
+* NodeJs 20: do not upgrade nodeJs as GitHub actions latest version is 20
 
 [build_shield]: https://github.com/YunaBraska/git-info-action/workflows/RELEASE/badge.svg
 

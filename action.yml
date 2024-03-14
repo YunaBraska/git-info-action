@@ -173,7 +173,7 @@ outputs:
   repo_owner_type:
     description: "The type of the repository's owner."
 runs:
-  using: "node16"
+  using: "node20"
   main: "dist/index.js"
 branding:
   icon: file-text

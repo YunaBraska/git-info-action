@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 echo "########## SETUP NODE (via nvm)        ##########"
-nvm install 16 || true
+nvm install 20 || true
 echo "########## DELETE CACHE                ##########"
 rm -rf package-lock.json node_modules
 echo "########## GENERATE [package-lock]     ##########"
