@@ -70,6 +70,7 @@ variety of programming languages and conventions.
 | ignore-files           | null    | Regex list to ignore files (comma separated) e.g. '/\.txt$/, /\.doc$/' |
 | branch-fallback        | 'main'  | Fallback if no branch_default could be found                           |
 | tag-fallback           | null    | Fallback if no tag could be found                                      |
+| tag-match-pattern      | null    | Pattern, using glob(7) syntax, to match tags in the repository         |
 | fallback-commit-type   | ''      | Fallback for commits without type (Conventional Commits)               |
 | fallback-commit-scope  | ''      | Fallback for commits without scope (Conventional Commits)              |
 | commit-msg-with-footer | false   | Include footer from commit messages (Conventional Commits)             |

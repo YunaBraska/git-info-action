@@ -61,6 +61,7 @@ try {
     let ignoreFilesStr = core.getInput('ignore-files') || null;
     let branchFallback = core.getInput('branch-fallback') || null;
     let tagFallback = core.getInput('tag-fallback') || null;
+    let tagMatchPattern = core.getInput('tag-match-pattern') || null;
     let fallbackCommitType = core.getInput('fallback-commit-type') || null;
     let fallbackCommitScope = core.getInput('fallback-commit-scope') || null;
     let commitMsgWithFooter = core.getInput('commit-msg-with-footer') || null;
@@ -77,6 +78,7 @@ try {
         ignoreFiles,
         branchFallback,
         tagFallback,
+        tagMatchPattern,
         !isEmpty(fallbackCommitType) ? fallbackCommitType : "",
         !isEmpty(fallbackCommitScope) ? fallbackCommitScope : "",
         !isEmpty(commitMsgWithFooter) ? commitMsgWithFooter.toLowerCase() === 'true' : false,
@@ -104,6 +106,7 @@ function run(
     ignoreFiles: Set<string>,
     branchFallback: string,
     tagFallback: string,
+    tagMatchPattern: string,
     fallbackCommitType: string,
     fallbackCommitScope: string,
     commitMsgWithFooter: boolean,
@@ -118,6 +121,7 @@ function run(
     result.set('ignore-files', Array.from(ignoreFiles).join(", ") || null);
     result.set('branch-fallback', branchFallback);
     result.set('tag-fallback', tagFallback);
+    result.set('tag-match-pattern', tagMatchPattern);
     result.set('fallback-commit-type', fallbackCommitType);
     result.set('fallback-commit-scope', fallbackCommitScope);
     result.set('commit-msg-with-footer', commitMsgWithFooter);
@@ -134,7 +138,7 @@ function run(
     result.set('branch_default', context?.repository?.default_branch || getDefaultBranch(workDir, branchFallback));
     result.set('is_default_branch', result.get('branch') === result.get('branch_default') && result.get('branch') !== null);
     result.set('sha_latest', cmd(workDir, 'git rev-parse HEAD'));
-    result = setLatestTag(workDir, result, tagFallback);
+    result = setLatestTag(workDir, result, tagFallback, tagMatchPattern);
     result.set('has_changes', result.get('sha_latest') !== result.get('sha_latest_tag'));
 
     addChanges(ignoreFiles, workDir, result);
@@ -145,7 +149,6 @@ function run(
     addChanges(ignoreFiles, workDir, result);
     return sortMap(nullToEmpty ? replaceNullWithEmptyMap(result) : result);
 }
-
 
 function addAheadBehind(workDir: PathOrFileDescriptor | number, result: Map<string, ResultType>) {
     let aheadBehind = cmd(workDir, 'git rev-list --count --left-right ' + result.get('branch') + '...' + result.get('branch_default'));
@@ -247,8 +250,11 @@ function hasFileEnding(fileNames: Set<string>, fileEndings: string[]): boolean {
     });
 }
 
-function setLatestTag(workDir: PathOrFileDescriptor, result: Map<string, ResultType>, tagFallback: string): Map<string, ResultType> {
-    let latestTag = cmd(workDir, 'git describe --tags --abbrev=0');
+function setLatestTag(workDir: PathOrFileDescriptor, result: Map<string, ResultType>, tagFallback: string, tagMatchPattern?: string | null): Map<string, ResultType> {
+    const baseCommand = 'git describe --tags --abbrev=0';
+    const command = tagMatchPattern ? `${baseCommand} --match ${tagMatchPattern}` : baseCommand;
+
+    let latestTag = cmd(workDir, command);
     if (!isEmpty(latestTag)) {
         result.set('tag_latest', latestTag);
         result.set('sha_latest_tag', cmd(workDir, 'git rev-list -n 1 ' + latestTag));
