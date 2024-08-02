@@ -543,6 +543,7 @@ try {
     let ignoreFilesStr = core.getInput('ignore-files') || null;
     let branchFallback = core.getInput('branch-fallback') || null;
     let tagFallback = core.getInput('tag-fallback') || null;
+    let tagMatchPattern = core.getInput('tag-match-pattern') || null;
     let fallbackCommitType = core.getInput('fallback-commit-type') || null;
     let fallbackCommitScope = core.getInput('fallback-commit-scope') || null;
     let commitMsgWithFooter = core.getInput('commit-msg-with-footer') || null;
@@ -553,7 +554,7 @@ try {
         workDir = getWorkingDirectory(workspace);
     }
     let ignoreFiles = (0, common_processing_1.isEmpty)(ignoreFilesStr) ? new Set() : ignoreFilesStr.split(',');
-    let result = run(github.context, workDir, ignoreFiles, branchFallback, tagFallback, !(0, common_processing_1.isEmpty)(fallbackCommitType) ? fallbackCommitType : "", !(0, common_processing_1.isEmpty)(fallbackCommitScope) ? fallbackCommitScope : "", !(0, common_processing_1.isEmpty)(commitMsgWithFooter) ? commitMsgWithFooter.toLowerCase() === 'true' : false, !(0, common_processing_1.isEmpty)(maxChangeLogLength) ? parseInt(maxChangeLogLength) || -1 : -1, !(0, common_processing_1.isEmpty)(nullToEmpty) ? nullToEmpty.toLowerCase() === 'true' : true);
+    let result = run(github.context, workDir, ignoreFiles, branchFallback, tagFallback, tagMatchPattern, !(0, common_processing_1.isEmpty)(fallbackCommitType) ? fallbackCommitType : "", !(0, common_processing_1.isEmpty)(fallbackCommitScope) ? fallbackCommitScope : "", !(0, common_processing_1.isEmpty)(commitMsgWithFooter) ? commitMsgWithFooter.toLowerCase() === 'true' : false, !(0, common_processing_1.isEmpty)(maxChangeLogLength) ? parseInt(maxChangeLogLength) || -1 : -1, !(0, common_processing_1.isEmpty)(nullToEmpty) ? nullToEmpty.toLowerCase() === 'true' : true);
     result.set('GITHUB_WORKSPACE', workspace || null);
     console.log(JSON.stringify(Object.fromEntries((0, common_processing_1.sortMap)(result)), null, 4));
     result.forEach((value, key) => {
@@ -568,7 +569,7 @@ catch (e) {
         core.setFailed(e.message);
     }
 }
-function run(context, workDir, ignoreFiles, branchFallback, tagFallback, fallbackCommitType, fallbackCommitScope, commitMsgWithFooter, maxChangelogLength, nullToEmpty) {
+function run(context, workDir, ignoreFiles, branchFallback, tagFallback, tagMatchPattern, fallbackCommitType, fallbackCommitScope, commitMsgWithFooter, maxChangelogLength, nullToEmpty) {
     var _a, _b;
     //DEFAULTS
     let result = new Map();
@@ -578,6 +579,7 @@ function run(context, workDir, ignoreFiles, branchFallback, tagFallback, fallbac
     result.set('ignore-files', Array.from(ignoreFiles).join(", ") || null);
     result.set('branch-fallback', branchFallback);
     result.set('tag-fallback', tagFallback);
+    result.set('tag-match-pattern', tagMatchPattern);
     result.set('fallback-commit-type', fallbackCommitType);
     result.set('fallback-commit-scope', fallbackCommitScope);
     result.set('commit-msg-with-footer', commitMsgWithFooter);
@@ -593,7 +595,7 @@ function run(context, workDir, ignoreFiles, branchFallback, tagFallback, fallbac
     result.set('branch_default', ((_b = context === null || context === void 0 ? void 0 : context.repository) === null || _b === void 0 ? void 0 : _b.default_branch) || getDefaultBranch(workDir, branchFallback));
     result.set('is_default_branch', result.get('branch') === result.get('branch_default') && result.get('branch') !== null);
     result.set('sha_latest', (0, common_processing_1.cmd)(workDir, 'git rev-parse HEAD'));
-    result = setLatestTag(workDir, result, tagFallback);
+    result = setLatestTag(workDir, result, tagFallback, tagMatchPattern);
     result.set('has_changes', result.get('sha_latest') !== result.get('sha_latest_tag'));
     addChanges(ignoreFiles, workDir, result);
     addAheadBehind(workDir, result);
@@ -697,8 +699,10 @@ function hasFileEnding(fileNames, fileEndings) {
         return fileEndings.some(ending => fileName.toLowerCase().endsWith(ending.toLowerCase()));
     });
 }
-function setLatestTag(workDir, result, tagFallback) {
-    let latestTag = (0, common_processing_1.cmd)(workDir, 'git describe --tags --abbrev=0');
+function setLatestTag(workDir, result, tagFallback, tagMatchPattern) {
+    const baseCommand = 'git describe --tags --abbrev=0';
+    const command = tagMatchPattern ? `${baseCommand} --match ${tagMatchPattern}` : baseCommand;
+    let latestTag = (0, common_processing_1.cmd)(workDir, command);
     if (!(0, common_processing_1.isEmpty)(latestTag)) {
         result.set('tag_latest', latestTag);
         result.set('sha_latest_tag', (0, common_processing_1.cmd)(workDir, 'git rev-list -n 1 ' + latestTag));

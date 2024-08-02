@@ -92,7 +92,7 @@ test('Test isEmpty', () => {
 });
 
 test('Test on empty dir', () => {
-    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null, null, false);
     expect(result.get('ignore-files')).toEqual(null);
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual(null);
@@ -100,6 +100,7 @@ test('Test on empty dir', () => {
     expect(result.get('ticket_numbers')).toEqual(null);
     expect(result.get('branch-fallback')).toEqual('main');
     expect(result.get('tag-fallback')).toEqual(null);
+    expect(result.get('tag-match-pattern')).toEqual(null);
     expect(result.get('is_git_repo')).toEqual(false);
     expect(result.get('branch')).toEqual(null);
     expect(result.get('branch_default')).toEqual('main');
@@ -116,7 +117,7 @@ test('Test on empty dir', () => {
 });
 
 test('Test on empty dir with "branch-fallback"', () => {
-    let result = main.run(null, workDir, new Set<string>(), 'my_fallback_branch', null, null, null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(), 'my_fallback_branch', null, null, null, null, null, null, false);
     expect(result.get('ignore-files')).toEqual(null);
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual(null);
@@ -124,6 +125,7 @@ test('Test on empty dir with "branch-fallback"', () => {
     expect(result.get('ticket_numbers')).toEqual(null);
     expect(result.get('branch-fallback')).toEqual('my_fallback_branch');
     expect(result.get('tag-fallback')).toEqual(null);
+    expect(result.get('tag-match-pattern')).toEqual(null);
     expect(result.get('is_git_repo')).toEqual(false);
     expect(result.get('branch')).toEqual(null);
     expect(result.get('branch_default')).toEqual('my_fallback_branch');
@@ -141,7 +143,7 @@ test('Test on empty dir with "branch-fallback"', () => {
 });
 
 test('Test on empty dir with "tag-fallback"', () => {
-    let result = main.run(null, workDir, new Set<string>(), null, '1.2.3', null, null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(), null, '1.2.3', null, null, null, null, null, false);
     expect(result.get('ignore-files')).toEqual(null);
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual(null);
@@ -149,6 +151,7 @@ test('Test on empty dir with "tag-fallback"', () => {
     expect(result.get('ticket_numbers')).toEqual(null);
     expect(result.get('branch-fallback')).toEqual('main');
     expect(result.get('tag-fallback')).toEqual('1.2.3');
+    expect(result.get('tag-match-pattern')).toEqual(null);
     expect(result.get('is_git_repo')).toEqual(false);
     expect(result.get('branch')).toEqual(null);
     expect(result.get('branch_default')).toEqual('main');
@@ -170,7 +173,7 @@ test('Test with file [howdy.java]', () => {
     setupGit(workDir);
     fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
 
-    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null, null, false);
     expect(result.get('ignore-files')).toEqual(null);
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual('chore');
@@ -178,6 +181,7 @@ test('Test with file [howdy.java]', () => {
     expect(result.get('ticket_numbers')).toEqual(null);
     expect(result.get('branch-fallback')).toEqual('main');
     expect(result.get('tag-fallback')).toEqual(null);
+    expect(result.get('tag-match-pattern')).toEqual(null);
     expect(result.get('is_git_repo')).toEqual(true);
     expect(result.get('branch')).toEqual('main');
     expect(result.get('branch_default')).toEqual('main');
@@ -199,7 +203,7 @@ test('Test with file [howdy.java] && commit', () => {
     setupGit(workDir);
     commitFile("howdy.java", `init commit`);
 
-    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null, null, false);
     expect(result.get('ignore-files')).toEqual(null);
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual(null);
@@ -207,6 +211,7 @@ test('Test with file [howdy.java] && commit', () => {
     expect(result.get('ticket_numbers')).toEqual(null);
     expect(result.get('branch-fallback')).toEqual('main');
     expect(result.get('tag-fallback')).toEqual(null);
+    expect(result.get('tag-match-pattern')).toEqual(null);
     expect(result.get('is_git_repo')).toEqual(true);
     expect(result.get('branch')).toEqual('main');
     expect(result.get('branch_default')).toEqual('main');
@@ -233,7 +238,7 @@ test('Test with file [howdy.java] && branch && default branch [init] && commit',
     cmdLog(workDir, 'git checkout -b add_file');
     commitFile("howdy.java", `init commit branch`);
 
-    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null, null, false);
     expect(result.get('ignore-files')).toEqual(null);
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual(null);
@@ -241,6 +246,7 @@ test('Test with file [howdy.java] && branch && default branch [init] && commit',
     expect(result.get('ticket_numbers')).toEqual(null);
     expect(result.get('branch-fallback')).toEqual('main');
     expect(result.get('tag-fallback')).toEqual(null);
+    expect(result.get('tag-match-pattern')).toEqual(null);
     expect(result.get('is_git_repo')).toEqual(true);
     expect(result.get('branch')).toEqual('add_file');
     expect(result.get('branch_default')).toEqual('main');
@@ -263,7 +269,7 @@ test('Test with ignore files', () => {
     fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
     fs.writeFileSync(path.join(workDir.toString(), "howdy.py"), "Hello there!");
 
-    let result = main.run(null, workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null, null, null, false);
     expect(result.get('ignore-files')).toEqual(".java, .jar");
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual('chore');
@@ -271,6 +277,7 @@ test('Test with ignore files', () => {
     expect(result.get('ticket_numbers')).toEqual(null);
     expect(result.get('branch-fallback')).toEqual('main');
     expect(result.get('tag-fallback')).toEqual(null);
+    expect(result.get('tag-match-pattern')).toEqual(null);
     expect(result.get('is_git_repo')).toEqual(true);
     expect(result.get('branch')).toEqual('main');
     expect(result.get('branch_default')).toEqual('main');
@@ -294,7 +301,7 @@ test('Test with ignore files should not have changes', () => {
     setupGit(workDir);
     fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
 
-    let result = main.run(null, workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null, null, false);
+    let result = main.run(null, workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null, null, null, false);
     expect(result.get('ignore-files')).toEqual(".java, .jar");
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual(null);
@@ -302,6 +309,7 @@ test('Test with ignore files should not have changes', () => {
     expect(result.get('ticket_numbers')).toEqual(null);
     expect(result.get('branch-fallback')).toEqual('main');
     expect(result.get('tag-fallback')).toEqual(null);
+    expect(result.get('tag-match-pattern')).toEqual(null);
     expect(result.get('is_git_repo')).toEqual(true);
     expect(result.get('branch')).toEqual('main');
     expect(result.get('branch_default')).toEqual('main');
@@ -343,7 +351,7 @@ test('Test conventional commit', () => {
     commitFile("pp.txt", `style:`);
     commitFile("qq.txt", `hi:`);
 
-    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, 50, false);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null, 50, false);
     expect(result.get('has_changes')).toEqual(true);
     expect(result.get('file_changes')).toEqual('aa.txt, bb.txt, cc.txt, dd.txt, ee.txt, ff.txt, gg.txt, hh.txt, ii.txt, jj.txt, kk.txt, ll.txt, mm.txt, nn.txt, oo.txt, pp.txt, qq.txt');
     expect(result.get('has_breaking_changes')).toEqual(true);
@@ -368,7 +376,7 @@ test('Test conventional commit with defaults && with footer && no breaking chang
     commitFile("bb.txt", `feat: add the amazing button${LINE_SEPARATOR}Refs: #123`);
     commitFile("cc.txt", `drop support for Node 6 #1338`);
 
-    let result = main.run(null, workDir, new Set<string>(), null, null, 'default-type', 'default-scope', true, null, null);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, 'default-type', 'default-scope', true, null, null);
     expect(result.get('has_changes')).toEqual(true);
     expect(result.get('has_breaking_changes')).toEqual(false);
     expect(result.get('commit_types')).toEqual("default-type, feat");
@@ -391,7 +399,7 @@ test('Test conventional commit with defaults && no footer && breaking change', (
     commitFile("bb.txt", `feat!: add the amazing button${LINE_SEPARATOR}Refs: #123`);
     commitFile("cc.txt", `drop support for Node 6 #1338`);
 
-    let result = main.run(null, workDir, new Set<string>(), null, null, 'default-type', 'default-scope', false, null, true);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, 'default-type', 'default-scope', false, null, true);
     expect(result.get('has_changes')).toEqual(true);
     expect(result.get('has_breaking_changes')).toEqual(true);
     expect(result.get('commit_types')).toEqual("default-type, feat");
@@ -404,7 +412,7 @@ test('Test conventional commit with defaults && no footer && breaking change', (
 test('Test context', () => {
     setupGit(workDir);
 
-    let result = main.run(context, workDir, new Set<string>(), null, null, null, null, null, null, false);
+    let result = main.run(context, workDir, new Set<string>(), null, null, null, null, null, null, null, false);
     //PAYLOAD
     expect(result.get('context_ref')).toEqual(context.payload.ref);
     expect(result.get('context_workflow_file')).toEqual(context.payload.workflow);
@@ -454,7 +462,7 @@ test('Test null to empty', () => {
     setupGit(workDir);
     fs.writeFileSync(path.join(workDir.toString(), "howdy.java"), "Hello there!");
 
-    let result = main.run(null, workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null, null, true);
+    let result = main.run(null, workDir, new Set<string>(['.java', '.jar']), null, null, null, null, null, null, null, true);
     expect(result.get('tag-fallback')).toEqual("");
     expect(result.get('tag_latest')).toEqual("");
     expect(result.get('sha_latest')).toEqual("");
@@ -475,7 +483,7 @@ test('Test changeTypes', () => {
 
     for (const [key, value] of Object.entries(reverseChangeTypes)) {
         commitFile(`${value[0]}.txt`, `${value[0]}: conventional commit`);
-        let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, true, null);
+        let result = main.run(null, workDir, new Set<string>(), null, null, null, null, null, null, true, null);
         expect(result.get('change_type')).toEqual(value[1]);
     }
 });
@@ -511,6 +519,3 @@ function removeDir(folderPath: PathOrFileDescriptor) {
         fs.rmdirSync(folderPath.toString());
     }
 }
-
-
-
