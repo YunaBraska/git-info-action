@@ -78,7 +78,7 @@ try {
         ignoreFiles,
         branchFallback,
         tagFallback,
-        tagMatchPattern,
+        !isEmpty(tagMatchPattern) ? tagMatchPattern : "",
         !isEmpty(fallbackCommitType) ? fallbackCommitType : "",
         !isEmpty(fallbackCommitScope) ? fallbackCommitScope : "",
         !isEmpty(commitMsgWithFooter) ? commitMsgWithFooter.toLowerCase() === 'true' : false,
@@ -252,7 +252,7 @@ function hasFileEnding(fileNames: Set<string>, fileEndings: string[]): boolean {
 
 function setLatestTag(workDir: PathOrFileDescriptor, result: Map<string, ResultType>, tagFallback: string, tagMatchPattern?: string | null): Map<string, ResultType> {
     const baseCommand = 'git describe --tags --abbrev=0';
-    const command = tagMatchPattern ? `${baseCommand} --match ${tagMatchPattern}` : baseCommand;
+    const command = isEmpty(tagMatchPattern) ? baseCommand : `${baseCommand} --match ${tagMatchPattern}`;
 
     let latestTag = cmd(workDir, command);
     if (!isEmpty(latestTag)) {

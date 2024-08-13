@@ -17,6 +17,10 @@ inputs:
     description: "fallback if no tag could be found"
     required: false
     default: "null"
+  tag-match-pattern:
+    description: "tag match pattern"
+    required: false
+    default: ""
   fallback-commit-type:
     description: "fallback for commits without type (Conventional Commits)"
     required: false

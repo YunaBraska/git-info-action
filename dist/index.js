@@ -554,7 +554,7 @@ try {
         workDir = getWorkingDirectory(workspace);
     }
     let ignoreFiles = (0, common_processing_1.isEmpty)(ignoreFilesStr) ? new Set() : ignoreFilesStr.split(',');
-    let result = run(github.context, workDir, ignoreFiles, branchFallback, tagFallback, tagMatchPattern, !(0, common_processing_1.isEmpty)(fallbackCommitType) ? fallbackCommitType : "", !(0, common_processing_1.isEmpty)(fallbackCommitScope) ? fallbackCommitScope : "", !(0, common_processing_1.isEmpty)(commitMsgWithFooter) ? commitMsgWithFooter.toLowerCase() === 'true' : false, !(0, common_processing_1.isEmpty)(maxChangeLogLength) ? parseInt(maxChangeLogLength) || -1 : -1, !(0, common_processing_1.isEmpty)(nullToEmpty) ? nullToEmpty.toLowerCase() === 'true' : true);
+    let result = run(github.context, workDir, ignoreFiles, branchFallback, tagFallback, !(0, common_processing_1.isEmpty)(tagMatchPattern) ? tagMatchPattern : "", !(0, common_processing_1.isEmpty)(fallbackCommitType) ? fallbackCommitType : "", !(0, common_processing_1.isEmpty)(fallbackCommitScope) ? fallbackCommitScope : "", !(0, common_processing_1.isEmpty)(commitMsgWithFooter) ? commitMsgWithFooter.toLowerCase() === 'true' : false, !(0, common_processing_1.isEmpty)(maxChangeLogLength) ? parseInt(maxChangeLogLength) || -1 : -1, !(0, common_processing_1.isEmpty)(nullToEmpty) ? nullToEmpty.toLowerCase() === 'true' : true);
     result.set('GITHUB_WORKSPACE', workspace || null);
     console.log(JSON.stringify(Object.fromEntries((0, common_processing_1.sortMap)(result)), null, 4));
     result.forEach((value, key) => {
@@ -701,7 +701,7 @@ function hasFileEnding(fileNames, fileEndings) {
 }
 function setLatestTag(workDir, result, tagFallback, tagMatchPattern) {
     const baseCommand = 'git describe --tags --abbrev=0';
-    const command = tagMatchPattern ? `${baseCommand} --match ${tagMatchPattern}` : baseCommand;
+    const command = (0, common_processing_1.isEmpty)(tagMatchPattern) ? baseCommand : `${baseCommand} --match ${tagMatchPattern}`;
     let latestTag = (0, common_processing_1.cmd)(workDir, command);
     if (!(0, common_processing_1.isEmpty)(latestTag)) {
         result.set('tag_latest', latestTag);
