@@ -251,14 +251,37 @@ function hasFileEnding(fileNames: Set<string>, fileEndings: string[]): boolean {
 }
 
 function setLatestTag(workDir: PathOrFileDescriptor, result: Map<string, ResultType>, tagFallback: string, tagMatchPattern?: string | null): Map<string, ResultType> {
-    const baseCommand = 'git describe --tags --abbrev=0';
-    const command = isEmpty(tagMatchPattern) ? baseCommand : `${baseCommand} --match ${tagMatchPattern}`;
+    let latestTag: string | null = null;
+    // Get all tags sorted by creation date, most recent first
+    const command = `git for-each-ref --count 100 --sort=-creatordate --format '%(refname:short)' refs/tags`;
+    let allTags: string[] = [];
+    try {
+        const tagsOutput = cmd(workDir, command)?.trim();
+        if (tagsOutput) {
+            allTags = tagsOutput.split(/\r?\n|\r/).map(tag => tag.trim()).filter(tag => tag.length > 0)
+        }
+    } catch (error) {
+        allTags = [];
+    }
 
-    let latestTag = cmd(workDir, command);
+    // Filter the tags based on the pattern if provided
+    if (tagMatchPattern && !isEmpty(tagMatchPattern)) {
+        const regex = new RegExp(tagMatchPattern);
+        allTags = allTags.filter(tag => regex.test(tag));
+    }
+
+    // Get the latest tag by date (first in the sorted list)
+    if (allTags.length > 0) {
+        latestTag = allTags[0];
+    }
+
+    // If a tag is found, get its corresponding SHA and store in the result map
     if (!isEmpty(latestTag)) {
         result.set('tag_latest', latestTag);
-        result.set('sha_latest_tag', cmd(workDir, 'git rev-list -n 1 ' + latestTag));
+        const shaLatestTag = cmd(workDir, `git rev-list -n 1 ${latestTag}`)?.trim();
+        result.set('sha_latest_tag', shaLatestTag || null);
     } else {
+        // If no tag is found, use the fallback tag or set to null
         result.set('tag_latest', isEmpty(tagFallback) ? null : tagFallback);
         result.set('sha_latest_tag', result.get('sha_latest') || null);
     }

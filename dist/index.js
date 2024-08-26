@@ -700,14 +700,37 @@ function hasFileEnding(fileNames, fileEndings) {
     });
 }
 function setLatestTag(workDir, result, tagFallback, tagMatchPattern) {
-    const baseCommand = 'git describe --tags --abbrev=0';
-    const command = (0, common_processing_1.isEmpty)(tagMatchPattern) ? baseCommand : `${baseCommand} --match ${tagMatchPattern}`;
-    let latestTag = (0, common_processing_1.cmd)(workDir, command);
+    var _a, _b;
+    let latestTag = null;
+    // Get all tags sorted by creation date, most recent first
+    const command = `git for-each-ref --sort=-creatordate --format '%(refname:short)' refs/tags`;
+    let allTags = [];
+    try {
+        const tagsOutput = (_a = (0, common_processing_1.cmd)(workDir, command)) === null || _a === void 0 ? void 0 : _a.trim();
+        if (tagsOutput) {
+            allTags = tagsOutput.split(/\r?\n|\r/).map(tag => tag.trim()).filter(tag => tag.length > 0);
+        }
+    }
+    catch (error) {
+        allTags = [];
+    }
+    // Filter the tags based on the pattern if provided
+    if (tagMatchPattern && !(0, common_processing_1.isEmpty)(tagMatchPattern)) {
+        const regex = new RegExp(tagMatchPattern);
+        allTags = allTags.filter(tag => regex.test(tag));
+    }
+    // Get the latest tag by date (first in the sorted list)
+    if (allTags.length > 0) {
+        latestTag = allTags[0];
+    }
+    // If a tag is found, get its corresponding SHA and store in the result map
     if (!(0, common_processing_1.isEmpty)(latestTag)) {
         result.set('tag_latest', latestTag);
-        result.set('sha_latest_tag', (0, common_processing_1.cmd)(workDir, 'git rev-list -n 1 ' + latestTag));
+        const shaLatestTag = (_b = (0, common_processing_1.cmd)(workDir, `git rev-list -n 1 ${latestTag}`)) === null || _b === void 0 ? void 0 : _b.trim();
+        result.set('sha_latest_tag', shaLatestTag || null);
     }
     else {
+        // If no tag is found, use the fallback tag or set to null
         result.set('tag_latest', (0, common_processing_1.isEmpty)(tagFallback) ? null : tagFallback);
         result.set('sha_latest_tag', result.get('sha_latest') || null);
     }
