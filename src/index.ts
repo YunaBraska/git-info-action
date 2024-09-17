@@ -187,7 +187,7 @@ function addSemCommits(result: Map<string, ResultType>, workDir: PathOrFileDescr
         let scopeMap = new Map<string, string[]>();
         commits.forEach(commit => {
                 if (commit.length >= 1 && !isEmpty(commit[0])) {
-                    if (isSingleWord(commit[0])) {
+                    if (/^[a-zA-Z0-9]+$/.test(commit[0])) {
                         let message = typeMap.has(commit[0]) ? typeMap.get(commit[0])! : [];
                         message.push(commit[3]);
                         typeMap.set(commit[0], message);
@@ -215,10 +215,6 @@ function addSemCommits(result: Map<string, ResultType>, workDir: PathOrFileDescr
         });
     }
 }
-
-const isSingleWord = (key: string): boolean => {
-    return /^[a-zA-Z0-9]+$/.test(key);
-};
 
 function setSemCommits(result: Map<string, ResultType>, typeMap: Map<string, string[]>, scopeMap: Map<string, string[]>, hasBreakingChange: boolean, maxChangeLogLength: number): void {
     let typeMapOrdered = orderByChangeType(typeMap);

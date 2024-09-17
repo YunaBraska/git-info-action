@@ -639,7 +639,7 @@ function addSemCommits(result, workDir, fallbackCommitType, fallbackCommitScope,
         let scopeMap = new Map();
         commits.forEach(commit => {
             if (commit.length >= 1 && !(0, common_processing_1.isEmpty)(commit[0])) {
-                if (isSingleWord(commit[0])) {
+                if (/^[a-zA-Z0-9]+$/.test(commit[0])) {
                     let message = typeMap.has(commit[0]) ? typeMap.get(commit[0]) : [];
                     message.push(commit[3]);
                     typeMap.set(commit[0], message);
@@ -669,9 +669,6 @@ function addSemCommits(result, workDir, fallbackCommitType, fallbackCommitScope,
         });
     }
 }
-const isSingleWord = (key) => {
-    return /^[a-zA-Z0-9]+$/.test(key);
-};
 function setSemCommits(result, typeMap, scopeMap, hasBreakingChange, maxChangeLogLength) {
     var _a;
     let typeMapOrdered = (0, common_processing_1.orderByChangeType)(typeMap);
