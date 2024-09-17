@@ -376,10 +376,10 @@ test('Test conventional commit with defaults && with footer && no breaking chang
     commitFile("bb.txt", `feat: add the amazing button${LINE_SEPARATOR}Refs: #123`);
     commitFile("cc.txt", `drop support for Node 6 #1338`);
 
-    let result = main.run(null, workDir, new Set<string>(), null, null, null, 'default-type', 'default-scope', true, null, null);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, 'defaulttype', 'default-scope', true, null, null);
     expect(result.get('has_changes')).toEqual(true);
     expect(result.get('has_breaking_changes')).toEqual(false);
-    expect(result.get('commit_types')).toEqual("default-type, feat");
+    expect(result.get('commit_types')).toEqual("defaulttype, feat");
     expect(result.get('commit_scopes')).toEqual("default-scope, shopping cart");
     //FIXME: get ALL ticket numbers also on windows
     if (os.platform().toLowerCase().startsWith('win')) {
@@ -399,10 +399,10 @@ test('Test conventional commit with defaults && no footer && breaking change', (
     commitFile("bb.txt", `feat!: add the amazing button${LINE_SEPARATOR}Refs: #123`);
     commitFile("cc.txt", `drop support for Node 6 #1338`);
 
-    let result = main.run(null, workDir, new Set<string>(), null, null, null, 'default-type', 'default-scope', false, null, true);
+    let result = main.run(null, workDir, new Set<string>(), null, null, null, 'invalid-default-type', 'default-scope', false, null, true);
     expect(result.get('has_changes')).toEqual(true);
     expect(result.get('has_breaking_changes')).toEqual(true);
-    expect(result.get('commit_types')).toEqual("default-type, feat");
+    expect(result.get('commit_types')).toEqual("chore, feat");
     expect(result.get('commit_scopes')).toEqual("default-scope, shopping cart");
     expect(result.get('ticket_numbers')).toEqual("#1338");
     expect(result.get('null-to-empty')).toEqual(true);

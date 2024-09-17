@@ -639,9 +639,16 @@ function addSemCommits(result, workDir, fallbackCommitType, fallbackCommitScope,
         let scopeMap = new Map();
         commits.forEach(commit => {
             if (commit.length >= 1 && !(0, common_processing_1.isEmpty)(commit[0])) {
-                let message = typeMap.has(commit[0]) ? typeMap.get(commit[0]) : [];
-                message.push(commit[3]);
-                typeMap.set(commit[0], message);
+                if (isSingleWord(commit[0])) {
+                    let message = typeMap.has(commit[0]) ? typeMap.get(commit[0]) : [];
+                    message.push(commit[3]);
+                    typeMap.set(commit[0], message);
+                }
+                else {
+                    let message = typeMap.has('chore') ? typeMap.get('chore') : [];
+                    message.push(commit.join(' ')); // Full commit message as value
+                    typeMap.set('chore', message);
+                }
             }
             if (commit.length >= 2 && !(0, common_processing_1.isEmpty)(commit[1])) {
                 let message = scopeMap.has(commit[1]) ? scopeMap.get(commit[1]) : [];
@@ -662,6 +669,9 @@ function addSemCommits(result, workDir, fallbackCommitType, fallbackCommitScope,
         });
     }
 }
+const isSingleWord = (key) => {
+    return /^[a-zA-Z0-9]+$/.test(key);
+};
 function setSemCommits(result, typeMap, scopeMap, hasBreakingChange, maxChangeLogLength) {
     var _a;
     let typeMapOrdered = (0, common_processing_1.orderByChangeType)(typeMap);
@@ -2614,7 +2624,7 @@ class HttpClient {
         }
         const usingSsl = parsedUrl.protocol === 'https:';
         proxyAgent = new undici_1.ProxyAgent(Object.assign({ uri: proxyUrl.href, pipelining: !this._keepAlive ? 0 : 1 }, ((proxyUrl.username || proxyUrl.password) && {
-            token: `Basic ${Buffer.from(`${proxyUrl.username}:${proxyUrl.password}`).toString('base64')}`
+            token: `${proxyUrl.username}:${proxyUrl.password}`
         })));
         this._proxyAgentDispatcher = proxyAgent;
         if (usingSsl && this._ignoreSslError) {
@@ -2728,11 +2738,11 @@ function getProxyUrl(reqUrl) {
     })();
     if (proxyVar) {
         try {
-            return new DecodedURL(proxyVar);
+            return new URL(proxyVar);
         }
         catch (_a) {
             if (!proxyVar.startsWith('http://') && !proxyVar.startsWith('https://'))
-                return new DecodedURL(`http://${proxyVar}`);
+                return new URL(`http://${proxyVar}`);
         }
     }
     else {
@@ -2790,19 +2800,6 @@ function isLoopbackAddress(host) {
         hostLower.startsWith('127.') ||
         hostLower.startsWith('[::1]') ||
         hostLower.startsWith('[0:0:0:0:0:0:0:1]'));
-}
-class DecodedURL extends URL {
-    constructor(url, base) {
-        super(url, base);
-        this._decodedUsername = decodeURIComponent(super.username);
-        this._decodedPassword = decodeURIComponent(super.password);
-    }
-    get username() {
-        return this._decodedUsername;
-    }
-    get password() {
-        return this._decodedPassword;
-    }
 }
 //# sourceMappingURL=proxy.js.map
 

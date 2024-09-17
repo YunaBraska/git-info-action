@@ -186,17 +186,24 @@ function addSemCommits(result: Map<string, ResultType>, workDir: PathOrFileDescr
         let typeMap = new Map<string, string[]>();
         let scopeMap = new Map<string, string[]>();
         commits.forEach(commit => {
-            if (commit.length >= 1 && !isEmpty(commit[0])) {
-                let message = typeMap.has(commit[0]) ? typeMap.get(commit[0])! : [];
-                message.push(commit[3]);
-                typeMap.set(commit[0], message);
+                if (commit.length >= 1 && !isEmpty(commit[0])) {
+                    if (isSingleWord(commit[0])) {
+                        let message = typeMap.has(commit[0]) ? typeMap.get(commit[0])! : [];
+                        message.push(commit[3]);
+                        typeMap.set(commit[0], message);
+                    } else {
+                        let message = typeMap.has('chore') ? typeMap.get('chore')! : [];
+                        message.push(commit.join(' ')); // Full commit message as value
+                        typeMap.set('chore', message);
+                    }
+                }
+                if (commit.length >= 2 && !isEmpty(commit[1])) {
+                    let message = scopeMap.has(commit[1]) ? scopeMap.get(commit[1])! : [];
+                    message.push(commit[3]);
+                    scopeMap.set(commit[1], message);
+                }
             }
-            if (commit.length >= 2 && !isEmpty(commit[1])) {
-                let message = scopeMap.has(commit[1]) ? scopeMap.get(commit[1])! : [];
-                message.push(commit[3]);
-                scopeMap.set(commit[1], message);
-            }
-        });
+        )
         setSemCommits(result, typeMap, scopeMap, hasBreakingChange, maxChangeLogLength);
     } else if (result.get("has_local_changes") === true) {
         result.set('ticket_numbers', null);
@@ -208,6 +215,10 @@ function addSemCommits(result: Map<string, ResultType>, workDir: PathOrFileDescr
         });
     }
 }
+
+const isSingleWord = (key: string): boolean => {
+    return /^[a-zA-Z0-9]+$/.test(key);
+};
 
 function setSemCommits(result: Map<string, ResultType>, typeMap: Map<string, string[]>, scopeMap: Map<string, string[]>, hasBreakingChange: boolean, maxChangeLogLength: number): void {
     let typeMapOrdered = orderByChangeType(typeMap);
