@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/YunaBraska/git-info-action#readme",
   "dependencies": {
-    "@actions/core": "^1.11.0",
+    "@actions/core": "^1.11.1",
     "@actions/github": "^5.1.1",
     "npm-check-updates": "^16.14.20"
   },
