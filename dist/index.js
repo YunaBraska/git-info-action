@@ -538,35 +538,37 @@ const fileEndingsMap = new Map([["js", [".js", ".mjs", ".cjs"]],
     ["text", [".txt", ".text",]],
     ["pictures", [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".heic", ".svg", ".webp", ".avif", ".raw"]],
 ]);
-try {
-    let workDir = core.getInput('work-dir');
-    let ignoreFilesStr = core.getInput('ignore-files') || null;
-    let branchFallback = core.getInput('branch-fallback') || null;
-    let tagFallback = core.getInput('tag-fallback') || null;
-    let tagMatchPattern = core.getInput('tag-match-pattern') || null;
-    let fallbackCommitType = core.getInput('fallback-commit-type') || null;
-    let fallbackCommitScope = core.getInput('fallback-commit-scope') || null;
-    let commitMsgWithFooter = core.getInput('commit-msg-with-footer') || null;
-    let maxChangeLogLength = core.getInput('max-changelog-length') || null;
-    let nullToEmpty = core.getInput('null-to-empty') || null;
-    let workspace = ((_a = process.env['GITHUB_WORKSPACE']) === null || _a === void 0 ? void 0 : _a.toString()) || null;
-    if (!workDir || workDir === ".") {
-        workDir = getWorkingDirectory(workspace);
+if (require.main === require.cache[eval('__filename')]) {
+    try {
+        let workDir = core.getInput('work-dir');
+        let ignoreFilesStr = core.getInput('ignore-files') || null;
+        let branchFallback = core.getInput('branch-fallback') || null;
+        let tagFallback = core.getInput('tag-fallback') || null;
+        let tagMatchPattern = core.getInput('tag-match-pattern') || null;
+        let fallbackCommitType = core.getInput('fallback-commit-type') || null;
+        let fallbackCommitScope = core.getInput('fallback-commit-scope') || null;
+        let commitMsgWithFooter = core.getInput('commit-msg-with-footer') || null;
+        let maxChangeLogLength = core.getInput('max-changelog-length') || null;
+        let nullToEmpty = core.getInput('null-to-empty') || null;
+        let workspace = ((_a = process.env['GITHUB_WORKSPACE']) === null || _a === void 0 ? void 0 : _a.toString()) || null;
+        if (!workDir || workDir === ".") {
+            workDir = getWorkingDirectory(workspace);
+        }
+        let ignoreFiles = (0, common_processing_1.isEmpty)(ignoreFilesStr) ? new Set() : ignoreFilesStr.split(',');
+        let result = run(github.context, workDir, ignoreFiles, branchFallback, tagFallback, !(0, common_processing_1.isEmpty)(tagMatchPattern) ? tagMatchPattern : "", !(0, common_processing_1.isEmpty)(fallbackCommitType) ? fallbackCommitType : "", !(0, common_processing_1.isEmpty)(fallbackCommitScope) ? fallbackCommitScope : "", !(0, common_processing_1.isEmpty)(commitMsgWithFooter) ? commitMsgWithFooter.toLowerCase() === 'true' : false, !(0, common_processing_1.isEmpty)(maxChangeLogLength) ? parseInt(maxChangeLogLength) || -1 : -1, !(0, common_processing_1.isEmpty)(nullToEmpty) ? nullToEmpty.toLowerCase() === 'true' : true);
+        result.set('GITHUB_WORKSPACE', workspace || null);
+        console.log(JSON.stringify(Object.fromEntries((0, common_processing_1.sortMap)(result)), null, 4));
+        result.forEach((value, key) => {
+            core.setOutput(key, value);
+        });
     }
-    let ignoreFiles = (0, common_processing_1.isEmpty)(ignoreFilesStr) ? new Set() : ignoreFilesStr.split(',');
-    let result = run(github.context, workDir, ignoreFiles, branchFallback, tagFallback, !(0, common_processing_1.isEmpty)(tagMatchPattern) ? tagMatchPattern : "", !(0, common_processing_1.isEmpty)(fallbackCommitType) ? fallbackCommitType : "", !(0, common_processing_1.isEmpty)(fallbackCommitScope) ? fallbackCommitScope : "", !(0, common_processing_1.isEmpty)(commitMsgWithFooter) ? commitMsgWithFooter.toLowerCase() === 'true' : false, !(0, common_processing_1.isEmpty)(maxChangeLogLength) ? parseInt(maxChangeLogLength) || -1 : -1, !(0, common_processing_1.isEmpty)(nullToEmpty) ? nullToEmpty.toLowerCase() === 'true' : true);
-    result.set('GITHUB_WORKSPACE', workspace || null);
-    console.log(JSON.stringify(Object.fromEntries((0, common_processing_1.sortMap)(result)), null, 4));
-    result.forEach((value, key) => {
-        core.setOutput(key, value);
-    });
-}
-catch (e) {
-    if (typeof e === "string") {
-        core.setFailed(e.toUpperCase());
-    }
-    else if (e instanceof Error) {
-        core.setFailed(e.message);
+    catch (e) {
+        if (typeof e === "string") {
+            core.setFailed(e.toUpperCase());
+        }
+        else if (e instanceof Error) {
+            core.setFailed(e.message);
+        }
     }
 }
 function run(context, workDir, ignoreFiles, branchFallback, tagFallback, tagMatchPattern, fallbackCommitType, fallbackCommitScope, commitMsgWithFooter, maxChangelogLength, nullToEmpty) {
