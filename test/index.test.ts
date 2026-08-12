@@ -74,11 +74,6 @@ afterEach(() => {
     removeDir(workDir);
 });
 
-afterAll(() => {
-    // Update shield demo
-    main.run(null, path.join(process.cwd()), new Set<string>(), null, null, null, null, null, null, false);
-});
-
 test('Test isEmpty', () => {
     expect(isEmpty(null)).toEqual(true);
     expect(isEmpty(undefined)).toEqual(true);
@@ -495,10 +490,7 @@ function commitFile(name: string, message: string) {
 }
 
 function setupGit(workDir: PathOrFileDescriptor) {
-    cmd(workDir, "git config init.defaultBranch main");
-    cmd(workDir, "git config --global init.defaultBranch main");
-    cmd(workDir, 'git init');
-    cmd(workDir, 'git checkout -b main');
+    cmd(workDir, 'git init -b main');
     cmd(workDir, 'git config --file .git/config user.email "kira@yuna.berlin"');
     cmd(workDir, 'git config --file .git/config user.name "Kira"');
     console.log('is_git_repo' + cmd(workDir, 'git rev-parse --is-inside-work-tree', 'git rev-parse --git-dir'));

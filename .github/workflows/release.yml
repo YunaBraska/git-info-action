@@ -1,0 +1,42 @@
+# yuna-release: true
+name: 🏷️ CD · Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      semver_strategy:
+        description: Version.
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      force:
+        description: Force.
+        required: true
+        default: false
+        type: boolean
+
+permissions: {}
+
+jobs:
+  release:
+    permissions:
+      contents: read
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_node_release.yml@b80440529eb537f4259bc2f510e9b3b920fdfe99
+    with:
+      force: ${{ inputs.force }}
+      semver_strategy: ${{ inputs.semver_strategy }}
+
+  github:
+    needs:
+      - release
+    if: ${{ needs.release.result == 'success' && needs.release.outputs.release == 'true' }}
+    permissions:
+      contents: write
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_node_create_github_release.yml@b80440529eb537f4259bc2f510e9b3b920fdfe99
+    with:
+      commit_sha: ${{ needs.release.outputs.commit_sha }}
+      version: ${{ needs.release.outputs.version }}

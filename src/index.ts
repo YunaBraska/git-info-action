@@ -56,47 +56,49 @@ const fileEndingsMap = new Map<string, string[]>(
         ["pictures", [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".heic", ".svg", ".webp", ".avif", ".raw"]],
     ]);
 
-try {
-    let workDir = core.getInput('work-dir');
-    let ignoreFilesStr = core.getInput('ignore-files') || null;
-    let branchFallback = core.getInput('branch-fallback') || null;
-    let tagFallback = core.getInput('tag-fallback') || null;
-    let tagMatchPattern = core.getInput('tag-match-pattern') || null;
-    let fallbackCommitType = core.getInput('fallback-commit-type') || null;
-    let fallbackCommitScope = core.getInput('fallback-commit-scope') || null;
-    let commitMsgWithFooter = core.getInput('commit-msg-with-footer') || null;
-    let maxChangeLogLength = core.getInput('max-changelog-length') || null;
-    let nullToEmpty = core.getInput('null-to-empty') || null;
-    let workspace = process.env['GITHUB_WORKSPACE']?.toString() || null;
-    if (!workDir || workDir === ".") {
-        workDir = getWorkingDirectory(workspace);
-    }
-    let ignoreFiles = isEmpty(ignoreFilesStr) ? new Set<string>() : ignoreFilesStr.split(',');
-    let result = run(
-        github.context,
-        workDir,
-        ignoreFiles,
-        branchFallback,
-        tagFallback,
-        !isEmpty(tagMatchPattern) ? tagMatchPattern : "",
-        !isEmpty(fallbackCommitType) ? fallbackCommitType : "",
-        !isEmpty(fallbackCommitScope) ? fallbackCommitScope : "",
-        !isEmpty(commitMsgWithFooter) ? commitMsgWithFooter.toLowerCase() === 'true' : false,
-        !isEmpty(maxChangeLogLength) ? parseInt(maxChangeLogLength) || -1 : -1,
-        !isEmpty(nullToEmpty) ? nullToEmpty.toLowerCase() === 'true' : true
-    );
-    result.set('GITHUB_WORKSPACE', workspace || null);
+if (require.main === module) {
+    try {
+        let workDir = core.getInput('work-dir');
+        let ignoreFilesStr = core.getInput('ignore-files') || null;
+        let branchFallback = core.getInput('branch-fallback') || null;
+        let tagFallback = core.getInput('tag-fallback') || null;
+        let tagMatchPattern = core.getInput('tag-match-pattern') || null;
+        let fallbackCommitType = core.getInput('fallback-commit-type') || null;
+        let fallbackCommitScope = core.getInput('fallback-commit-scope') || null;
+        let commitMsgWithFooter = core.getInput('commit-msg-with-footer') || null;
+        let maxChangeLogLength = core.getInput('max-changelog-length') || null;
+        let nullToEmpty = core.getInput('null-to-empty') || null;
+        let workspace = process.env['GITHUB_WORKSPACE']?.toString() || null;
+        if (!workDir || workDir === ".") {
+            workDir = getWorkingDirectory(workspace);
+        }
+        let ignoreFiles = isEmpty(ignoreFilesStr) ? new Set<string>() : ignoreFilesStr.split(',');
+        let result = run(
+            github.context,
+            workDir,
+            ignoreFiles,
+            branchFallback,
+            tagFallback,
+            !isEmpty(tagMatchPattern) ? tagMatchPattern : "",
+            !isEmpty(fallbackCommitType) ? fallbackCommitType : "",
+            !isEmpty(fallbackCommitScope) ? fallbackCommitScope : "",
+            !isEmpty(commitMsgWithFooter) ? commitMsgWithFooter.toLowerCase() === 'true' : false,
+            !isEmpty(maxChangeLogLength) ? parseInt(maxChangeLogLength) || -1 : -1,
+            !isEmpty(nullToEmpty) ? nullToEmpty.toLowerCase() === 'true' : true
+        );
+        result.set('GITHUB_WORKSPACE', workspace || null);
 
-    console.log(JSON.stringify(Object.fromEntries(sortMap(result)), null, 4));
+        console.log(JSON.stringify(Object.fromEntries(sortMap(result)), null, 4));
 
-    result.forEach((value, key) => {
-        core.setOutput(key, value);
-    });
-} catch (e) {
-    if (typeof e === "string") {
-        core.setFailed(e.toUpperCase());
-    } else if (e instanceof Error) {
-        core.setFailed(e.message);
+        result.forEach((value, key) => {
+            core.setOutput(key, value);
+        });
+    } catch (e) {
+        if (typeof e === "string") {
+            core.setFailed(e.toUpperCase());
+        } else if (e instanceof Error) {
+            core.setFailed(e.message);
+        }
     }
 }
 

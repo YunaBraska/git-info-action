@@ -1,0 +1,27 @@
+name: 🔄 CI · Main
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Ref.
+        required: false
+        default: ''
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: build-main-${{ github.ref || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_node_build_common.yml@b80440529eb537f4259bc2f510e9b3b920fdfe99
+    with:
+      ref: ${{ inputs.ref || github.sha }}
