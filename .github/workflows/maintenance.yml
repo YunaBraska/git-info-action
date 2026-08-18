@@ -19,6 +19,6 @@ jobs:
       actions: write
       contents: write
       pull-requests: write
-    uses: YunaBraska/YunaBraska/.github/workflows/wc_node_update_dependencies.yml@496af352a3cfe100eae3e5f7b7e0e47299ff6fe0
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_node_update_dependencies.yml@2569ff116dcbe734f579a8939f6512b27188b3bb
     with:
       dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
