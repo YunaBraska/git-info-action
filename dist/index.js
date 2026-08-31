@@ -9797,8 +9797,6 @@ module.exports = function(stream_module) {
 "use strict";
 
 
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-
 /*!
  * is-plain-object <https://github.com/jonschlinkert/is-plain-object>
  *
