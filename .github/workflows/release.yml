@@ -25,7 +25,7 @@ jobs:
   release:
     permissions:
       contents: read
-    uses: YunaBraska/YunaBraska/.github/workflows/wc_node_release.yml@496af352a3cfe100eae3e5f7b7e0e47299ff6fe0
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_node_release.yml@a989b376b6f85e9643c12231a44640036f8ad1c2
     with:
       force: ${{ inputs.force }}
       semver_strategy: ${{ inputs.semver_strategy }}
@@ -36,7 +36,7 @@ jobs:
     if: ${{ needs.release.result == 'success' && needs.release.outputs.release == 'true' }}
     permissions:
       contents: write
-    uses: YunaBraska/YunaBraska/.github/workflows/wc_node_create_github_release.yml@496af352a3cfe100eae3e5f7b7e0e47299ff6fe0
+    uses: YunaBraska/YunaBraska/.github/workflows/wc_node_create_github_release.yml@a989b376b6f85e9643c12231a44640036f8ad1c2
     with:
       commit_sha: ${{ needs.release.outputs.commit_sha }}
       version: ${{ needs.release.outputs.version }}
